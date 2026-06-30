@@ -20,10 +20,10 @@ export function EventBanner() {
             animate={{ opacity: 1, y: 0, height: "auto" }}
             exit={{ opacity: 0, y: -8, height: 0 }}
             transition={{ duration: 0.25 }}
-            className="mx-4 mt-3 overflow-hidden rounded-2xl"
-            style={{ border: `1.5px solid ${active.border}` }}
+            className="mt-3 overflow-hidden"
+            style={{ borderTop: `1.5px solid ${active.border}`, borderBottom: `1.5px solid ${active.border}` }}
           >
-            <div className="flex items-center gap-3 px-4 py-3.5" style={{ background: active.bg }}>
+            <div className="flex items-center justify-center gap-3 px-4 py-3.5" style={{ background: active.bg }}>
               <span className="text-[26px]">{active.emoji}</span>
               <div className="min-w-0">
                 <div className="font-serif text-sm font-semibold" style={{ color: active.titleColor }}>
