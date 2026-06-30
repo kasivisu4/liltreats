@@ -66,8 +66,14 @@ const routeTree = rootRoute.addChildren([
   contactRoute,
 ]);
 
+// In production the app is served from a GitHub Pages subpath (/liltreats/).
+// Vite exposes that as BASE_URL; the router needs it as its basepath.
+const rawBase = import.meta.env.BASE_URL;
+const basepath = rawBase === "/" ? undefined : rawBase.replace(/\/$/, "");
+
 export const router = createRouter({
   routeTree,
+  basepath,
   defaultPreload: "intent",
   scrollRestoration: true,
 });

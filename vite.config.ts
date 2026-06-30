@@ -2,7 +2,9 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 
-export default defineConfig({
+// Served from a GitHub Pages project subpath in production, root in dev.
+export default defineConfig(({ command }) => ({
+  base: command === "build" ? "/liltreats/" : "/",
   plugins: [
     react(),
     VitePWA({
@@ -16,7 +18,7 @@ export default defineConfig({
         background_color: "#FBF6F0",
         display: "standalone",
         orientation: "portrait",
-        start_url: "/",
+        start_url: ".",
         icons: [
           {
             src: "favicon.svg",
@@ -38,4 +40,4 @@ export default defineConfig({
     host: true,
     port: 5173,
   },
-});
+}));
