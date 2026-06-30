@@ -1,0 +1,76 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: "Nunito", system-ui, sans-serif;
+  background: #efe6dd;
+  color: #3a2228;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Hide scrollbars on horizontal scrollers but keep scroll */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+@layer components {
+  .card-glass {
+    @apply bg-[rgba(255,248,244,0.75)] border border-line rounded-[18px] backdrop-blur-sm;
+  }
+
+  .btn-main {
+    @apply w-full rounded-2xl py-4 text-[15px] font-bold text-white tracking-[0.2px]
+      bg-gradient-to-br from-deep to-mauve shadow-soft transition-transform
+      active:scale-[0.98] disabled:from-[#D8C0C8] disabled:to-[#D8C0C8]
+      disabled:text-[#A08890] disabled:shadow-none disabled:active:scale-100;
+  }
+
+  .btn-outline {
+    @apply w-full rounded-[14px] py-3 text-[13px] font-bold text-deep
+      border-[1.5px] border-line bg-transparent transition-transform active:scale-[0.98]
+      flex items-center justify-center gap-2;
+  }
+
+  .field-label {
+    @apply block text-[11px] font-bold text-deep mb-1.5 tracking-[0.3px];
+  }
+
+  .field-input {
+    @apply w-full bg-white/70 border-[1.5px] border-line rounded-xl px-3.5 py-3
+      text-[13px] text-ink outline-none font-sans
+      placeholder:text-ink-mute focus:border-gold transition-colors;
+  }
+
+  .pill {
+    @apply text-[10px] font-bold px-2.5 py-1 rounded-[10px];
+  }
+
+  .section-label {
+    @apply font-serif text-[15px] font-semibold text-deep mb-3.5 flex items-center gap-2.5;
+  }
+  .section-label::after {
+    content: "";
+    @apply flex-1 h-px bg-line;
+  }
+}
