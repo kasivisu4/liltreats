@@ -25,7 +25,7 @@ export function EventBanner() {
           >
             <div className="flex items-center justify-center gap-3 px-4 py-3.5" style={{ background: active.bg }}>
               <span className="text-[26px]">{active.emoji}</span>
-              <div className="min-w-0">
+              <div className="min-w-0 text-center">
                 <div className="font-serif text-sm font-semibold" style={{ color: active.titleColor }}>
                   {active.title}
                 </div>
