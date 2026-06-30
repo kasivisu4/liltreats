@@ -12,7 +12,7 @@ interface TopBarProps {
 export function TopBar({ title, showBack, right, onIgClick }: TopBarProps) {
   const router = useRouter();
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between border-b border-line bg-cream/95 px-4 pb-3 pt-4 backdrop-blur-sm">
+    <header className="sticky top-0 z-30 flex items-center justify-between bg-cream/95 px-4 pb-3 pt-4 backdrop-blur-sm">
       <div className="flex min-w-[64px] items-center">
         {showBack ? (
           <button
