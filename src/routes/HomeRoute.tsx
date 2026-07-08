@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { MessageCircle, Play } from "lucide-react";
 import { Screen } from "../components/Screen";
 import { TopBar } from "../components/TopBar";
