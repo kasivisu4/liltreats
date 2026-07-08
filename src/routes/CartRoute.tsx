@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { QrCode, CreditCard, Wallet, CircleX } from "lucide-react";
 import { Screen } from "../components/Screen";
 import { TopBar } from "../components/TopBar";
+import { StepIndicator } from "../components/StepIndicator";
 import { TIER_BY_ID, VIDEO_ADDON_PRICE } from "../data/tiers";
 import { SHIPPING_FLAT, useCartStore } from "../store/cartStore";
 import { useCreateOrder } from "../api/queries";
