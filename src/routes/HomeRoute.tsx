@@ -146,27 +146,51 @@ export function HomeRoute() {
         </button>
       </section>
 
-      {/* CTA */}
-      <section className="px-4 py-4">
-        <button
-          disabled={!selectedTier}
-          onClick={() =>
-            selectedTier &&
-            navigate({ to: "/book/$tier", params: { tier: selectedTier.id } })
-          }
-          className="btn-main"
-        >
-          {selectedTier
-            ? `Book ${selectedTier.name} →`
-            : "Select a scoop to begin"}
-        </button>
+      {/* Contact link — always visible, low priority */}
+      <section className="px-4 pb-4 pt-2">
         <button
           onClick={() => navigate({ to: "/contact" })}
-          className="btn-outline mt-2"
+          className="btn-outline"
         >
           <MessageCircle size={15} /> Contact us directly
         </button>
       </section>
+
+      {/* Extra space so the sticky bar never covers content */}
+      <div className="h-24" />
+
+      {/* STICKY BOOKING CTA */}
+      <AnimatePresence>
+        {selectedTier && (
+          <motion.div
+            key="sticky-cta"
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 420, damping: 34 }}
+            className="fixed bottom-0 left-0 right-0 z-40 flex items-center gap-3 border-t border-gold-light bg-cream/95 px-4 py-3 backdrop-blur-sm"
+            style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}
+          >
+            {/* Tier summary */}
+            <div className="flex min-w-0 flex-1 flex-col">
+              <span className="font-serif text-[15px] font-bold leading-tight text-deep">
+                {selectedTier.icon} {selectedTier.name}
+              </span>
+              <span className="text-[11px] font-semibold text-ink-soft">
+                ₹{selectedTier.price.toLocaleString("en-IN")} + shipping · {selectedTier.itemsLabel}
+              </span>
+            </div>
+            <button
+              onClick={() =>
+                navigate({ to: "/book/$tier", params: { tier: selectedTier.id } })
+              }
+              className="flex-shrink-0 rounded-2xl bg-deep px-5 py-3 font-serif text-[14px] font-bold text-cream shadow-md transition-transform active:scale-95"
+            >
+              Book now →
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </Screen>
   );
 }
