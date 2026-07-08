@@ -40,42 +40,7 @@ export function PreferencesRoute() {
 
   return (
     <Screen top={<TopBar title="Your scoop" showBack />}>
-      {/* Step indicator */}
-      <div className="flex items-center gap-2 border-b border-line bg-gold-pale px-4 py-2">
-        {[
-          { n: 1, label: "Preferences" },
-          { n: 2, label: "Checkout" },
-          { n: 3, label: "Confirm" },
-        ].map(({ n, label }, i) => {
-          const isActive = n === 1;
-          const isDone = false;
-          return (
-            <div key={n} className="flex items-center gap-2">
-              {i > 0 && <div className="h-px w-5 bg-line" />}
-              <div className="flex items-center gap-1.5">
-                <span
-                  className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-extrabold transition-colors ${
-                    isActive
-                      ? "bg-deep text-cream"
-                      : isDone
-                      ? "bg-gold text-white"
-                      : "bg-line text-ink-mute"
-                  }`}
-                >
-                  {n}
-                </span>
-                <span
-                  className={`text-[10px] font-bold ${
-                    isActive ? "text-deep" : "text-ink-mute"
-                  }`}
-                >
-                  {label}
-                </span>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      <StepIndicator current={1} />
 
       <div className="p-4">
         {/* Tier summary */}
