@@ -46,7 +46,7 @@ interface CartState {
   banner: BannerId;
   lastOrder: Order | null;
 
-  setTier: (t: TierId) => void;
+  setTier: (t: TierId | null) => void;
   setLastOrder: (o: Order) => void;
   setVideoAddon: (v: boolean) => void;
   toggleVibe: (v: string) => void;
