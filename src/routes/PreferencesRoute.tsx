@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "@tanstack/react-router";
 import { Screen } from "../components/Screen";
 import { TopBar } from "../components/TopBar";
 import { VideoAddon } from "../components/VideoAddon";
+import { StepIndicator } from "../components/StepIndicator";
 import { TIERS, TIER_BY_ID, type TierId } from "../data/tiers";
 import {
   FAV_CATEGORIES,
