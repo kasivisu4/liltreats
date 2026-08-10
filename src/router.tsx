@@ -11,50 +11,44 @@ import { CartRoute } from "./routes/CartRoute";
 import { ConfirmRoute } from "./routes/ConfirmRoute";
 import { OrdersRoute } from "./routes/OrdersRoute";
 import { ContactRoute } from "./routes/ContactRoute";
+import { ShopRoute } from "./routes/ShopRoute";
+import { ShopItemRoute } from "./routes/ShopItemRoute";
+import { AccountRoute } from "./routes/AccountRoute";
+import { BookingsRoute } from "./routes/BookingsRoute";
+import { AdminLayout } from "./routes/admin/AdminLayout";
+import { AdminDashboardRoute } from "./routes/admin/AdminDashboardRoute";
+import { AdminOrdersRoute } from "./routes/admin/AdminOrdersRoute";
+import { AdminVideoBookingsRoute } from "./routes/admin/AdminVideoBookingsRoute";
+import { AdminInventoryRoute } from "./routes/admin/AdminInventoryRoute";
+import { AdminProductsRoute } from "./routes/admin/AdminProductsRoute";
+import { AdminCustomersRoute } from "./routes/admin/AdminCustomersRoute";
+import { AdminProfitRoute } from "./routes/admin/AdminProfitRoute";
+import { AdminScoopBookingsRoute } from "./routes/admin/AdminScoopBookingsRoute";
 
 const rootRoute = createRootRoute({ component: AppLayout });
 
-const indexRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/",
-  component: HomeRoute,
-});
+const indexRoute = createRoute({ getParentRoute: () => rootRoute, path: "/", component: HomeRoute });
+const inventoryRoute = createRoute({ getParentRoute: () => rootRoute, path: "/inventory", component: InventoryRoute });
+const bookRoute = createRoute({ getParentRoute: () => rootRoute, path: "/book/$tier", component: PreferencesRoute });
+const cartRoute = createRoute({ getParentRoute: () => rootRoute, path: "/cart", component: CartRoute });
+const confirmRoute = createRoute({ getParentRoute: () => rootRoute, path: "/confirm", component: ConfirmRoute });
+const ordersRoute = createRoute({ getParentRoute: () => rootRoute, path: "/orders", component: OrdersRoute });
+const contactRoute = createRoute({ getParentRoute: () => rootRoute, path: "/contact", component: ContactRoute });
+const shopRoute = createRoute({ getParentRoute: () => rootRoute, path: "/shop", component: ShopRoute });
+const shopItemRoute = createRoute({ getParentRoute: () => rootRoute, path: "/shop/$itemId", component: ShopItemRoute });
+const accountRoute = createRoute({ getParentRoute: () => rootRoute, path: "/account", component: AccountRoute });
+const bookingsRoute = createRoute({ getParentRoute: () => rootRoute, path: "/bookings", component: BookingsRoute });
 
-const inventoryRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/inventory",
-  component: InventoryRoute,
-});
-
-const bookRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/book/$tier",
-  component: PreferencesRoute,
-});
-
-const cartRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/cart",
-  component: CartRoute,
-});
-
-const confirmRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/confirm",
-  component: ConfirmRoute,
-});
-
-const ordersRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/orders",
-  component: OrdersRoute,
-});
-
-const contactRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/contact",
-  component: ContactRoute,
-});
+// Admin routes
+const adminLayout = createRoute({ getParentRoute: () => rootRoute, path: "/admin", component: AdminLayout });
+const adminIndexRoute = createRoute({ getParentRoute: () => adminLayout, path: "/", component: AdminDashboardRoute });
+const adminOrdersRoute = createRoute({ getParentRoute: () => adminLayout, path: "/orders", component: AdminOrdersRoute });
+const adminScoopBookingsRoute = createRoute({ getParentRoute: () => adminLayout, path: "/scoop-bookings", component: AdminScoopBookingsRoute });
+const adminVideoBookingsRoute = createRoute({ getParentRoute: () => adminLayout, path: "/video-bookings", component: AdminVideoBookingsRoute });
+const adminInventoryRoute = createRoute({ getParentRoute: () => adminLayout, path: "/inventory", component: AdminInventoryRoute });
+const adminProductsRoute = createRoute({ getParentRoute: () => adminLayout, path: "/products", component: AdminProductsRoute });
+const adminCustomersRoute = createRoute({ getParentRoute: () => adminLayout, path: "/customers", component: AdminCustomersRoute });
+const adminProfitRoute = createRoute({ getParentRoute: () => adminLayout, path: "/profit", component: AdminProfitRoute });
 
 const routeTree = rootRoute.addChildren([
   indexRoute,
@@ -64,10 +58,22 @@ const routeTree = rootRoute.addChildren([
   confirmRoute,
   ordersRoute,
   contactRoute,
+  shopRoute,
+  shopItemRoute,
+  accountRoute,
+  bookingsRoute,
+  adminLayout.addChildren([
+    adminIndexRoute,
+    adminOrdersRoute,
+    adminScoopBookingsRoute,
+    adminVideoBookingsRoute,
+    adminInventoryRoute,
+    adminProductsRoute,
+    adminCustomersRoute,
+    adminProfitRoute,
+  ]),
 ]);
 
-// In production the app is served from a GitHub Pages subpath (/liltreats/).
-// Vite exposes that as BASE_URL; the router needs it as its basepath.
 const rawBase = import.meta.env.BASE_URL;
 const basepath = rawBase === "/" ? undefined : rawBase.replace(/\/$/, "");
 
