@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { QrCode, CreditCard, Wallet, CircleX } from "lucide-react";
+import { QrCode, CreditCard, Wallet, CircleX, Video, Trash2 } from "lucide-react";
 import { Screen } from "../components/Screen";
 import { TopBar } from "../components/TopBar";
 import { StepIndicator } from "../components/StepIndicator";
@@ -19,12 +19,18 @@ export function CartRoute() {
   const navigate = useNavigate();
   const selectedTier = useCartStore((s) => s.selectedTier);
   const videoAddon = useCartStore((s) => s.videoAddon);
+  const selectedVideoSlotId = useCartStore((s) => s.selectedVideoSlotId);
+  const selectedVideoDate = useCartStore((s) => s.selectedVideoDate);
+  const selectedVideoTime = useCartStore((s) => s.selectedVideoTime);
   const vibes = useCartStore((s) => s.vibes);
   const favCategories = useCartStore((s) => s.favCategories);
   const contact = useCartStore((s) => s.contact);
   const setContactField = useCartStore((s) => s.setContactField);
   const payment = useCartStore((s) => s.paymentMethod);
   const setPayment = useCartStore((s) => s.setPaymentMethod);
+  const shopCart = useCartStore((s) => s.shopCart);
+  const updateShopCartQty = useCartStore((s) => s.updateShopCartQty);
+  const removeFromShopCart = useCartStore((s) => s.removeFromShopCart);
   const setLastOrder = useCartStore((s) => s.setLastOrder);
 
   const createOrder = useCreateOrder();
@@ -36,7 +42,10 @@ export function CartRoute() {
   if (!selectedTier) return null;
   const tier = TIER_BY_ID(selectedTier);
 
-  const total = tier.price + SHIPPING_FLAT + (videoAddon ? VIDEO_ADDON_PRICE : 0);
+  const shopTotal = shopCart.reduce((s, i) => s + i.price * i.quantity, 0);
+  const videoPrice = videoAddon ? VIDEO_ADDON_PRICE : 0;
+  const total = tier.price + SHIPPING_FLAT + videoPrice + shopTotal;
+
   const itemsPreview =
     favCategories.length > 0
       ? favCategories.slice(0, 3)
@@ -44,17 +53,34 @@ export function CartRoute() {
         ? vibes.slice(0, 2)
         : ["Curated surprise"];
 
-  const canSubmit = contact.name.trim() && contact.phone.trim() && !createOrder.isPending;
+  const canSubmit =
+    contact.name.trim() &&
+    contact.phone.trim() &&
+    contact.building.trim() &&
+    contact.area.trim() &&
+    contact.pin.trim() &&
+    (!videoAddon || !!selectedVideoSlotId) &&
+    !createOrder.isPending;
 
   async function placeOrder() {
     if (!canSubmit) return;
     const order = await createOrder.mutateAsync({
       tierId: tier.id,
       videoAddon,
+      videoSlotId: selectedVideoSlotId,
       shipping: SHIPPING_FLAT,
       itemsPreview,
+      name: contact.name,
+      phone: contact.phone,
+      email: contact.email,
+      instagram: contact.instagram,
+      building: contact.building,
       area: contact.area,
-    });
+      pin: contact.pin,
+      note: contact.note,
+      paymentMethod: payment,
+      discount: 0,
+    } as Parameters<typeof createOrder.mutateAsync>[0]);
     setLastOrder(order);
     navigate({ to: "/confirm" });
   }
@@ -64,9 +90,13 @@ export function CartRoute() {
     key: keyof ContactDetails,
     placeholder: string,
     type = "text",
+    required = false,
   ) => (
     <div>
-      <label className="field-label">{label}</label>
+      <label className="field-label">
+        {label}
+        {required && <span className="ml-0.5 text-rose">*</span>}
+      </label>
       <input
         className="field-input"
         type={type}
@@ -78,29 +108,78 @@ export function CartRoute() {
   );
 
   return (
-    <Screen top={<TopBar title="Your cart" showBack />}>
+    <Screen top={<TopBar title="Checkout" showBack />}>
       <StepIndicator current={2} />
 
       <div className="p-4">
-        {/* Summary */}
+        {/* Scoop summary */}
         <div className="mb-1 text-[10px] font-bold uppercase tracking-[1.5px] text-ink-mute">
-          Order summary
+          Your order
         </div>
         <div className="card-glass mb-4 p-4">
           <div className="mb-2.5 flex items-center gap-3 border-b border-line pb-2.5">
             <span className="text-[28px]">{tier.icon}</span>
-            <div>
+            <div className="flex-1">
               <div className="font-serif text-[15px] font-semibold text-deep">{tier.name}</div>
               <div className="text-[12px] font-semibold text-ink-soft">{tier.itemsLabel}</div>
             </div>
-            <div className="ml-auto font-serif text-[20px] font-bold text-deep">
+            <div className="font-serif text-[20px] font-bold text-deep">
               ₹{tier.price.toLocaleString("en-IN")}
             </div>
           </div>
-          <div className="space-y-1.5 text-[13px]">
-            {videoAddon && (
-              <Row k="Video recording" v={`+₹${VIDEO_ADDON_PRICE}`} />
-            )}
+
+          {videoAddon && (
+            <div className="mb-2 flex items-center gap-2 rounded-xl border border-rose/20 bg-[#FFF0F4] px-3 py-2">
+              <Video size={14} className="flex-shrink-0 text-rose" />
+              <div className="flex-1 text-[12px] font-bold text-deep">Video recording</div>
+              {selectedVideoDate && (
+                <div className="text-right text-[11px] font-semibold text-ink-soft">
+                  <div>{new Date(selectedVideoDate + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</div>
+                  <div>{selectedVideoTime}</div>
+                </div>
+              )}
+              <div className="text-[13px] font-bold text-rose">+₹{VIDEO_ADDON_PRICE}</div>
+            </div>
+          )}
+
+          {/* Individual items in cart */}
+          {shopCart.length > 0 && (
+            <div className="mb-2 space-y-1.5">
+              <div className="text-[10px] font-bold uppercase tracking-wide text-ink-mute">
+                Individual items
+              </div>
+              {shopCart.map((item) => (
+                <div key={item.itemId} className="flex items-center gap-2">
+                  <span className="text-[16px]">{item.emoji}</span>
+                  <div className="flex-1 text-[12px] font-semibold text-deep">{item.name}</div>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => updateShopCartQty(item.itemId, item.quantity - 1)}
+                      className="flex h-6 w-6 items-center justify-center rounded-full border border-line bg-white/70 text-[12px] font-bold text-deep"
+                    >
+                      −
+                    </button>
+                    <span className="w-5 text-center text-[12px] font-bold text-deep">{item.quantity}</span>
+                    <button
+                      onClick={() => updateShopCartQty(item.itemId, item.quantity + 1)}
+                      className="flex h-6 w-6 items-center justify-center rounded-full border border-line bg-white/70 text-[12px] font-bold text-deep"
+                    >
+                      +
+                    </button>
+                  </div>
+                  <div className="w-16 text-right text-[12px] font-bold text-deep">
+                    ₹{(item.price * item.quantity).toLocaleString("en-IN")}
+                  </div>
+                  <button onClick={() => removeFromShopCart(item.itemId)}>
+                    <Trash2 size={13} className="text-ink-mute" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="mt-2 space-y-1.5 border-t border-line pt-2.5 text-[13px]">
+            {shopTotal > 0 && <Row k="Items subtotal" v={`₹${shopTotal.toLocaleString("en-IN")}`} />}
             <Row k="Shipping" v={`₹${SHIPPING_FLAT}`} />
             <div className="flex items-center justify-between border-t border-line pt-2">
               <span className="font-bold text-deep">Total</span>
@@ -111,23 +190,26 @@ export function CartRoute() {
           </div>
         </div>
 
-        {/* Address */}
+        {/* Delivery address */}
         <div className="mb-1 text-[10px] font-bold uppercase tracking-[1.5px] text-ink-mute">
-          Delivery · Hyderabad
+          Delivery details
         </div>
         <div className="card-glass mb-4 space-y-3 p-4">
-          {field("Full name", "name", "Your name")}
-          {field("WhatsApp number", "phone", "+91 98765 43210", "tel")}
-          {field("Instagram handle (for tagging)", "instagram", "@yourhandle")}
-          {field("Flat / Building", "building", "Flat no., building name")}
-          {field("Area", "area", "Banjara Hills, Jubilee Hills, Kondapur…")}
+          {field("Full name", "name", "Your name", "text", true)}
+          {field("WhatsApp number", "phone", "+91 98765 43210", "tel", true)}
+          {field("Email", "email", "your@email.com", "email")}
+          {field("Instagram handle", "instagram", "@yourhandle")}
+          {field("Flat / Building", "building", "Flat no., building name", "text", true)}
+          {field("Area / Locality", "area", "Banjara Hills, Kondapur…", "text", true)}
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="field-label">City</label>
               <input className="field-input !bg-[rgba(240,230,220,0.6)] font-bold !text-gold" value="Hyderabad" readOnly />
             </div>
             <div>
-              <label className="field-label">PIN code</label>
+              <label className="field-label">
+                PIN code<span className="ml-0.5 text-rose">*</span>
+              </label>
               <input
                 className="field-input"
                 value={contact.pin}
@@ -136,12 +218,12 @@ export function CartRoute() {
               />
             </div>
           </div>
-          {field("Note (gift message, instructions)", "note", "Optional")}
+          {field("Gift message / note", "note", "Optional")}
         </div>
 
         {/* Payment */}
         <div className="mb-1 text-[10px] font-bold uppercase tracking-[1.5px] text-ink-mute">
-          Payment
+          Payment method
         </div>
         <div className="card-glass mb-3 p-4">
           {PAYMENTS.map(({ id, name, sub, icon: Icon, bg, color }) => (
@@ -174,12 +256,18 @@ export function CartRoute() {
         </div>
 
         {/* No COD */}
-        <div className="mb-3 flex items-center gap-2.5 rounded-xl border border-[#F0C0C0] bg-[#FFF0F0] px-3.5 py-2.5">
+        <div className="mb-4 flex items-center gap-2.5 rounded-xl border border-[#F0C0C0] bg-[#FFF0F0] px-3.5 py-2.5">
           <CircleX size={18} className="flex-shrink-0 text-[#C03040]" />
           <p className="text-[12px] font-bold leading-snug text-[#802030]">
-            No Cash on Delivery — prepaid orders only (UPI · Card · Wallet)
+            No Cash on Delivery — prepaid orders only
           </p>
         </div>
+
+        {videoAddon && !selectedVideoSlotId && (
+          <div className="mb-3 rounded-xl border border-gold/40 bg-gold-pale px-3 py-2.5 text-[12px] font-bold text-deep">
+            ⚠ Please go back and select a video date & slot before placing your order.
+          </div>
+        )}
 
         {createOrder.isError && (
           <p className="mb-3 text-center text-[12px] font-bold text-[#B02840]">
@@ -188,7 +276,9 @@ export function CartRoute() {
         )}
 
         <button onClick={placeOrder} disabled={!canSubmit} className="btn-main">
-          {createOrder.isPending ? "Placing order…" : `Place order · ₹${total.toLocaleString("en-IN")} ✦`}
+          {createOrder.isPending
+            ? "Placing order…"
+            : `Place order · ₹${total.toLocaleString("en-IN")} ✦`}
         </button>
         <p className="mb-5 mt-2 text-center text-[11px] font-semibold leading-relaxed text-ink-mute">
           Secure prepaid checkout · Cancellations accepted before 24 hrs
