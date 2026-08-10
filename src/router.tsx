@@ -15,6 +15,8 @@ import { ShopRoute } from "./routes/ShopRoute";
 import { ShopItemRoute } from "./routes/ShopItemRoute";
 import { AccountRoute } from "./routes/AccountRoute";
 import { BookingsRoute } from "./routes/BookingsRoute";
+import { LoginRoute } from "./routes/LoginRoute";
+import { HowItWorksRoute } from "./routes/HowItWorksRoute";
 import { AdminLayout } from "./routes/admin/AdminLayout";
 import { AdminDashboardRoute } from "./routes/admin/AdminDashboardRoute";
 import { AdminOrdersRoute } from "./routes/admin/AdminOrdersRoute";
@@ -24,9 +26,14 @@ import { AdminProductsRoute } from "./routes/admin/AdminProductsRoute";
 import { AdminCustomersRoute } from "./routes/admin/AdminCustomersRoute";
 import { AdminProfitRoute } from "./routes/admin/AdminProfitRoute";
 import { AdminScoopBookingsRoute } from "./routes/admin/AdminScoopBookingsRoute";
+import { AdminReportsRoute } from "./routes/admin/AdminReportsRoute";
+import { AdminScoopManagementRoute } from "./routes/admin/AdminScoopManagementRoute";
+import { AdminDeliveryRoute } from "./routes/admin/AdminDeliveryRoute";
+import { AdminPaymentsRoute } from "./routes/admin/AdminPaymentsRoute";
 
 const rootRoute = createRootRoute({ component: AppLayout });
 
+// Customer routes
 const indexRoute = createRoute({ getParentRoute: () => rootRoute, path: "/", component: HomeRoute });
 const inventoryRoute = createRoute({ getParentRoute: () => rootRoute, path: "/inventory", component: InventoryRoute });
 const bookRoute = createRoute({ getParentRoute: () => rootRoute, path: "/book/$tier", component: PreferencesRoute });
@@ -38,6 +45,8 @@ const shopRoute = createRoute({ getParentRoute: () => rootRoute, path: "/shop", 
 const shopItemRoute = createRoute({ getParentRoute: () => rootRoute, path: "/shop/$itemId", component: ShopItemRoute });
 const accountRoute = createRoute({ getParentRoute: () => rootRoute, path: "/account", component: AccountRoute });
 const bookingsRoute = createRoute({ getParentRoute: () => rootRoute, path: "/bookings", component: BookingsRoute });
+const loginRoute = createRoute({ getParentRoute: () => rootRoute, path: "/login", component: LoginRoute });
+const howItWorksRoute = createRoute({ getParentRoute: () => rootRoute, path: "/how-it-works", component: HowItWorksRoute });
 
 // Admin routes
 const adminLayout = createRoute({ getParentRoute: () => rootRoute, path: "/admin", component: AdminLayout });
@@ -49,6 +58,10 @@ const adminInventoryRoute = createRoute({ getParentRoute: () => adminLayout, pat
 const adminProductsRoute = createRoute({ getParentRoute: () => adminLayout, path: "/products", component: AdminProductsRoute });
 const adminCustomersRoute = createRoute({ getParentRoute: () => adminLayout, path: "/customers", component: AdminCustomersRoute });
 const adminProfitRoute = createRoute({ getParentRoute: () => adminLayout, path: "/profit", component: AdminProfitRoute });
+const adminReportsRoute = createRoute({ getParentRoute: () => adminLayout, path: "/reports", component: AdminReportsRoute });
+const adminScoopManagementRoute = createRoute({ getParentRoute: () => adminLayout, path: "/scoop-management", component: AdminScoopManagementRoute });
+const adminDeliveryRoute = createRoute({ getParentRoute: () => adminLayout, path: "/delivery", component: AdminDeliveryRoute });
+const adminPaymentsRoute = createRoute({ getParentRoute: () => adminLayout, path: "/payments", component: AdminPaymentsRoute });
 
 const routeTree = rootRoute.addChildren([
   indexRoute,
@@ -62,6 +75,8 @@ const routeTree = rootRoute.addChildren([
   shopItemRoute,
   accountRoute,
   bookingsRoute,
+  loginRoute,
+  howItWorksRoute,
   adminLayout.addChildren([
     adminIndexRoute,
     adminOrdersRoute,
@@ -71,6 +86,10 @@ const routeTree = rootRoute.addChildren([
     adminProductsRoute,
     adminCustomersRoute,
     adminProfitRoute,
+    adminReportsRoute,
+    adminScoopManagementRoute,
+    adminDeliveryRoute,
+    adminPaymentsRoute,
   ]),
 ]);
 
