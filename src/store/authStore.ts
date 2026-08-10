@@ -1,10 +1,11 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { api } from "../api/client";
 import type { Address } from "../api/mockApi";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Auth store — mock for now, swap internals for Supabase auth when wiring up.
-// Shape is intentionally kept close to Supabase user/session structure.
+// Auth store — wired to real MongoDB backend via /api/auth
+// JWT token is persisted and attached to every API call by client.ts
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface AuthUser {
@@ -16,104 +17,83 @@ export interface AuthUser {
   joinedAt: string;
   totalSpend: number;
   addresses: Address[];
+  role: "customer" | "admin";
 }
 
 interface AuthState {
   user: AuthUser | null;
+  token: string | null;
   isLoggedIn: boolean;
 
-  // Actions
   login: (email: string, password: string) => Promise<void>;
   signup: (name: string, phone: string, email: string, password: string) => Promise<void>;
   logout: () => void;
-  updateProfile: (fields: Partial<Pick<AuthUser, "name" | "phone" | "email" | "instagram">>) => void;
+  updateProfile: (fields: Partial<Pick<AuthUser, "name" | "phone" | "email" | "instagram">>) => Promise<void>;
   addAddress: (addr: Omit<Address, "id">) => void;
   updateAddress: (id: string, addr: Partial<Omit<Address, "id">>) => void;
   deleteAddress: (id: string) => void;
   setDefaultAddress: (id: string) => void;
 }
 
-// Seeded mock user matches MOCK_CUSTOMER in mockApi.ts
-const SEED_USER: AuthUser = {
-  id: "cust-001",
-  name: "Priya Sharma",
-  phone: "+91 98765 43210",
-  email: "priya@example.com",
-  instagram: "@priyastyled",
-  joinedAt: "2026-04-01T00:00:00.000Z",
-  totalSpend: 2607,
-  addresses: [
-    {
-      id: "addr-001",
-      label: "Home",
-      building: "Flat 402, Serene Residency",
-      area: "Banjara Hills",
-      city: "Hyderabad",
-      state: "Telangana",
-      pin: "500034",
-      isDefault: true,
-    },
-  ],
-};
+let addrSeq = 100;
 
-let addrSeq = 2;
+interface LoginResponse {
+  token: string;
+  user: {
+    id: string; _id?: string; name: string; phone: string;
+    email: string; instagram?: string; role: "customer" | "admin";
+    createdAt?: string;
+  };
+}
+
+function mapUser(u: LoginResponse["user"]): AuthUser {
+  return {
+    id: String(u.id ?? u._id ?? ""),
+    name: u.name ?? "",
+    phone: u.phone ?? "",
+    email: u.email ?? "",
+    instagram: u.instagram ?? "",
+    joinedAt: u.createdAt ?? new Date().toISOString(),
+    totalSpend: 0,
+    addresses: [],
+    role: u.role ?? "customer",
+  };
+}
 
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
       user: null,
+      token: null,
       isLoggedIn: false,
 
-      login: async (email, _password) => {
-        // Mock: any password works; email "priya@example.com" loads seed user
-        await new Promise((r) => setTimeout(r, 1100));
-        const user: AuthUser =
-          email.toLowerCase() === SEED_USER.email
-            ? { ...SEED_USER }
-            : {
-                id: `cust-${Date.now()}`,
-                name: email.split("@")[0],
-                phone: "",
-                email,
-                instagram: "",
-                joinedAt: new Date().toISOString(),
-                totalSpend: 0,
-                addresses: [],
-              };
-        set({ user, isLoggedIn: true });
+      login: async (email, password) => {
+        const res = await api.post<LoginResponse>("/auth/login", { email, password });
+        set({ token: res.token, user: mapUser(res.user), isLoggedIn: true });
       },
 
-      signup: async (name, phone, email, _password) => {
-        await new Promise((r) => setTimeout(r, 1300));
-        const user: AuthUser = {
-          id: `cust-${Date.now()}`,
-          name,
-          phone,
-          email,
-          instagram: "",
-          joinedAt: new Date().toISOString(),
-          totalSpend: 0,
-          addresses: [],
-        };
-        set({ user, isLoggedIn: true });
+      signup: async (name, phone, email, password) => {
+        const res = await api.post<LoginResponse>("/auth/signup", { name, phone, email, password });
+        set({ token: res.token, user: mapUser(res.user), isLoggedIn: true });
       },
 
-      logout: () => set({ user: null, isLoggedIn: false }),
+      logout: () => set({ user: null, token: null, isLoggedIn: false }),
 
-      updateProfile: (fields) =>
-        set((s) =>
-          s.user ? { user: { ...s.user, ...fields } } : {},
-        ),
+      updateProfile: async (fields) => {
+        const res = await api.patch<{ user: LoginResponse["user"] }>("/auth/me", fields);
+        set((s) => s.user
+          ? { user: { ...s.user, ...fields, name: res.user.name, phone: res.user.phone } }
+          : {},
+        );
+      },
 
+      // Address management remains local (will be wired to /api/addresses in Phase E)
       addAddress: (addr) => {
         const id = `addr-${String(addrSeq++).padStart(3, "0")}`;
         set((s) => {
           if (!s.user) return {};
           const addresses = addr.isDefault
-            ? [
-                ...s.user.addresses.map((a) => ({ ...a, isDefault: false })),
-                { ...addr, id },
-              ]
+            ? [...s.user.addresses.map((a) => ({ ...a, isDefault: false })), { ...addr, id }]
             : [...s.user.addresses, { ...addr, id }];
           return { user: { ...s.user, addresses } };
         });
@@ -122,36 +102,26 @@ export const useAuthStore = create<AuthState>()(
       updateAddress: (id, fields) =>
         set((s) => {
           if (!s.user) return {};
-          const addresses = s.user.addresses.map((a) =>
-            a.id === id ? { ...a, ...fields } : a,
-          );
-          return { user: { ...s.user, addresses } };
+          return { user: { ...s.user, addresses: s.user.addresses.map((a) => a.id === id ? { ...a, ...fields } : a) } };
         }),
 
       deleteAddress: (id) =>
         set((s) => {
           if (!s.user) return {};
           const addresses = s.user.addresses.filter((a) => a.id !== id);
-          // If deleted was default, promote first remaining
-          if (addresses.length > 0 && !addresses.some((a) => a.isDefault)) {
-            addresses[0].isDefault = true;
-          }
+          if (addresses.length > 0 && !addresses.some((a) => a.isDefault)) addresses[0].isDefault = true;
           return { user: { ...s.user, addresses } };
         }),
 
       setDefaultAddress: (id) =>
         set((s) => {
           if (!s.user) return {};
-          const addresses = s.user.addresses.map((a) => ({
-            ...a,
-            isDefault: a.id === id,
-          }));
-          return { user: { ...s.user, addresses } };
+          return { user: { ...s.user, addresses: s.user.addresses.map((a) => ({ ...a, isDefault: a.id === id })) } };
         }),
     }),
     {
       name: "liltreats-auth",
-      partialize: (s) => ({ user: s.user, isLoggedIn: s.isLoggedIn }),
+      partialize: (s) => ({ user: s.user, token: s.token, isLoggedIn: s.isLoggedIn }),
     },
   ),
 );
