@@ -426,21 +426,21 @@ export function AccountRoute() {
   // Sub-views
   if (subView === "profile") {
     return (
-      <Screen top={<TopBar title="Edit profile" showBack onBack={() => setSubView("main")} />}>
+      <Screen top={<TopBar title="Edit profile" showBack />}>
         <ProfileEdit user={user} onBack={() => setSubView("main")} />
       </Screen>
     );
   }
   if (subView === "addresses") {
     return (
-      <Screen top={<TopBar title="Saved addresses" showBack onBack={() => setSubView("main")} />}>
+      <Screen top={<TopBar title="Saved addresses" showBack />}>
         <AddressManager user={user} onBack={() => setSubView("main")} />
       </Screen>
     );
   }
   if (subView === "notifications") {
     return (
-      <Screen top={<TopBar title="Notifications" showBack onBack={() => setSubView("main")} />}>
+      <Screen top={<TopBar title="Notifications" showBack />}>
         <NotificationList onBack={() => setSubView("main")} />
       </Screen>
     );
