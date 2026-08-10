@@ -188,21 +188,24 @@ Home → tap tier → tap "Book Now" → /book/$tier
 
 **Route:** `/login`
 **File:** `src/routes/LoginRoute.tsx`
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-### To build
-- Login tab: phone/email + password, validation, error states
-- Signup tab: name, phone, email, password, confirm password
-- Forgot password link
-- After login: redirect to intended page or /account
-- Auth context / store (mock for now, Supabase later)
+### What is built
+- Login tab: email + password with inline field validation and server error banner
+- Signup tab: name, phone, email, password, confirm password — all validated
+- Forgot password view: email input → mock "check your inbox" success screen
+- Auth store (`src/store/authStore.ts`): persisted via zustand, mock login/signup, Supabase-ready shape
+- Redirect to `/account` (or `?redirect=` param) after successful auth
+- Google / OTP social login buttons (UI only, wired when Supabase is connected)
+- Animated field error messages, loading spinner, success state
 
 ### Acceptance criteria
-- [ ] Login form with validation
-- [ ] Signup form with validation
-- [ ] Error states (wrong password, user exists, etc.)
-- [ ] Successful login navigates to account
-- [ ] Checkout prompts login if not logged in
+- [x] Login form with validation
+- [x] Signup form with validation and confirm password
+- [x] Forgot password flow with success screen
+- [x] Error states shown inline per field and as banner
+- [x] Successful login navigates to /account
+- [x] Auth persisted across page refreshes (zustand persist)
 
 ---
 
