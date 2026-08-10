@@ -103,19 +103,25 @@ export function AdminLayout() {
               </button>
             </div>
             <nav className="flex-1 overflow-y-auto px-2 py-3">
-              {NAV.map(({ path, label, icon: Icon }) => (
-                <button
-                  key={path}
-                  onClick={() => { navigate({ to: path as "/" }); setMobileOpen(false); }}
-                  className={`mb-0.5 flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[13px] font-bold transition-colors ${
-                    isActive(path)
-                      ? "bg-deep text-cream"
-                      : "text-ink-soft hover:bg-white/60 hover:text-deep"
-                  }`}
-                >
-                  <Icon size={15} />
-                  {label}
-                </button>
+              {NAV.map(({ path, label, icon: Icon, section }) => (
+                <div key={path}>
+                  {section && (
+                    <div className="mb-1 mt-3 px-2 text-[9px] font-bold uppercase tracking-[1.5px] text-ink-mute first:mt-0">
+                      {section}
+                    </div>
+                  )}
+                  <button
+                    onClick={() => { navigate({ to: path as "/" }); setMobileOpen(false); }}
+                    className={`mb-0.5 flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[13px] font-bold transition-colors ${
+                      isActive(path)
+                        ? "bg-deep text-cream"
+                        : "text-ink-soft hover:bg-white/60 hover:text-deep"
+                    }`}
+                  >
+                    <Icon size={15} />
+                    {label}
+                  </button>
+                </div>
               ))}
             </nav>
             <div className="border-t border-line px-4 py-3">
