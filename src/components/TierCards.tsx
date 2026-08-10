@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { Check } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
 import { ACCENT_STYLES, TIERS, type Tier, type TierId } from "../data/tiers";
 import { useCartStore } from "../store/cartStore";
 import { useSlots } from "../api/queries";
