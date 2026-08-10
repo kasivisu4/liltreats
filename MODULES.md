@@ -16,8 +16,8 @@
 | 4 | Individual Items Shop | ✅ Complete | P0 |
 | 5 | Cart & Checkout | ✅ Complete | P0 |
 | 6 | Order Confirmation | ✅ Complete | P0 |
-| 7 | Login / Signup UI | ⬜ Not Started | P1 |
-| 8 | Customer Account & Profile | ⬜ Not Started | P1 |
+| 7 | Login / Signup UI | ✅ Complete | P1 |
+| 8 | Customer Account & Profile | ✅ Complete | P1 |
 | 9 | My Orders | ✅ Complete | P1 |
 | 10 | My Bookings | ✅ Complete | P1 |
 | 11 | How It Works | ✅ Complete | P2 |
