@@ -11,6 +11,10 @@ import {
   ArrowLeft,
   Menu,
   X,
+  BarChart2,
+  CreditCard,
+  Truck,
+  Settings,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -18,17 +22,22 @@ interface NavItem {
   path: string;
   label: string;
   icon: React.ComponentType<{ size?: number; className?: string }>;
+  section?: string;
 }
 
 const NAV: NavItem[] = [
-  { path: "/admin/", label: "Dashboard", icon: LayoutDashboard },
-  { path: "/admin/orders", label: "Orders", icon: ShoppingBag },
+  { path: "/admin/", label: "Dashboard", icon: LayoutDashboard, section: "Overview" },
+  { path: "/admin/orders", label: "Orders", icon: ShoppingBag, section: "Operations" },
   { path: "/admin/scoop-bookings", label: "Scoop Bookings", icon: Package },
   { path: "/admin/video-bookings", label: "Video Bookings", icon: Video },
-  { path: "/admin/inventory", label: "Inventory", icon: Boxes },
-  { path: "/admin/products", label: "Products", icon: Package },
-  { path: "/admin/customers", label: "Customers", icon: Users },
+  { path: "/admin/delivery", label: "Delivery", icon: Truck },
+  { path: "/admin/payments", label: "Payments", icon: CreditCard, section: "Finance" },
   { path: "/admin/profit", label: "Profit & Loss", icon: TrendingUp },
+  { path: "/admin/reports", label: "Reports", icon: BarChart2 },
+  { path: "/admin/inventory", label: "Inventory", icon: Boxes, section: "Catalog" },
+  { path: "/admin/products", label: "Products", icon: Package },
+  { path: "/admin/scoop-management", label: "Scoop Config", icon: Settings },
+  { path: "/admin/customers", label: "Customers", icon: Users, section: "People" },
 ];
 
 export function AdminLayout() {
