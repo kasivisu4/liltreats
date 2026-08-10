@@ -232,6 +232,27 @@ function DetailPanel({ tier, left }: { tier: Tier; left: number }) {
       >
         🎁 Freebies included with every scoop
       </div>
+
+      {/* Action buttons — View Details + Book Now (per spec) */}
+      <div className="mt-4 flex gap-2.5">
+        <button
+          onClick={() =>
+            navigate({ to: "/book/$tier", params: { tier: tier.id } })
+          }
+          className="flex-1 rounded-xl border border-line bg-white/80 py-2.5 text-[13px] font-bold text-ink-soft transition-transform active:scale-95"
+        >
+          View Details
+        </button>
+        <button
+          disabled={sold}
+          onClick={() =>
+            navigate({ to: "/book/$tier", params: { tier: tier.id } })
+          }
+          className="flex-1 rounded-xl bg-deep py-2.5 text-[13px] font-bold text-cream shadow-sm transition-transform active:scale-95 disabled:opacity-40"
+        >
+          {sold ? "Sold out" : "Book Now →"}
+        </button>
+      </div>
     </motion.div>
   );
 }
