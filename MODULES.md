@@ -213,19 +213,25 @@ Home → tap tier → tap "Book Now" → /book/$tier
 
 **Route:** `/account`
 **File:** `src/routes/AccountRoute.tsx`
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete
 
-### Current state
-- Profile header with stats (mock data only)
-- Navigation menu links
-- No edit functionality wired
-
-### To build
-- Profile edit: name, phone, email (saves to store/Supabase)
-- Address management: add, edit, delete, set default
-- Notification list
-- Payment/transaction history tab
-- All data driven by logged-in user (after Module 7)
+### What is built
+- Unauthenticated state: prompts sign in instead of showing account
+- Profile header: name, phone, instagram, edit button (pencil icon)
+- Profile edit sub-view: name, phone, email, instagram — saves to auth store
+- Stats: total orders, active, delivered (from real order data)
+- Upcoming video booking highlight card
+- Total spend + member since (from auth store)
+- Menu: My Orders, My Bookings, Shop, Track Scoop, Saved Addresses, Profile, Notifications
+- Notification badge on bell icon (unread count)
+- Notifications sub-view: list with read/unread state, mark as read on tap
+- Saved Addresses sub-view:
+  - Add address (label, building, area, city, state, pin, set-as-default)
+  - Edit address inline
+  - Delete address
+  - Set default address
+- Default address preview with "Manage" link
+- Sign out button (clears auth store, navigates to home)
 
 ---
 
