@@ -487,17 +487,25 @@ Magic Scoop:
 **Embedded in:** `/admin/video-bookings`
 **Status:** 🔄 In Progress
 
+### Business rule clarification
+- Maximum **2 confirmed video bookings per calendar day** — this is a daily cap, not a per-slot cap
+- Each time slot holds **1 booking** (one customer per slot, one at a time)
+- So the system has 2 slots per day by default, and max daily bookings = 2
+- "Max capacity per slot" and "max bookings per day" are intentionally separate settings:
+  - `maxCapacity` per slot = 1 (one customer per time slot)
+  - `maxBookingsPerDay` = 2 (two slots available per day)
+- Admin configures how many slots exist per day, not a separate "daily cap" number
+
 ### Exists
 - Block / unblock individual slots per date
 
 ### To build
-- Add new time slot
+- Add new time slot for a date (time, duration)
 - Edit slot time
 - Delete slot
-- Set max capacity per slot
-- Configure global lead time (default: 5 days)
-- Configure booking window (default: 30 days)
-- Configure max bookings per day (default: 2)
+- Configure global settings: lead time (default 5 days), booking window (default 30 days)
+- Configure max bookings per day via number of active slots (not a separate override)
+- Per-slot block / unblock (already partial)
 
 ---
 
