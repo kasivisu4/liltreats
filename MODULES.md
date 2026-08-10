@@ -56,6 +56,7 @@
 - Live drop badge with countdown
 - Week strip with per-tier slot counts
 - "Our Scoops" section with TierCards (vessel animation, detail panel accordion)
+- **"View Details" + "Book Now" buttons on every tier card detail panel** ✅ Added
 - Individual Items promo strip with "Shop now" → /shop
 - Past drops carousel (links to IG)
 - Testimonials
@@ -68,7 +69,7 @@
 - [x] Hero headline matches spec
 - [x] Two CTA buttons: Explore Scoops + Shop Individual Items
 - [x] How It Works has 4 steps
-- [x] Tier cards show detail panel with Book Now button
+- [x] Tier cards show "View Details" and "Book Now" buttons in detail panel
 - [x] Mobile-first, works at 375px
 
 ---
