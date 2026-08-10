@@ -561,10 +561,504 @@ Magic Scoop:
 ## MODULE 30 – MONGODB BACKEND INTEGRATION
 
 **Status:** ⬜ Not Started
-**Priority:** P0 (everything else depends on this for production)
-**Database:** MongoDB Atlas
-**API Layer:** Node.js + Express + Mongoose
+**Priority:** P0 — Atlas URI provided, ready to build
+**Database:** MongoDB Atlas (`liltreats` database)
+**API Layer:** Node.js + Express + Mongoose on port 4000
 **Frontend connection:** Vite proxy `/api/*` → Express on port 4000
+**URI:** Stored in backend `.env` only — never in frontend code
+
+---
+
+### Architecture
+
+```
+Browser (React / Vite on :3000)
+        │
+        │  /api/* requests
+        ▼
+Vite Dev Proxy (:3000/api) → Express Server (:4000)
+                                    │
+                                    │  Mongoose ODM
+                                    ▼
+                            MongoDB Atlas
+                            Database: liltreats
+```
+
+In production: frontend is a static build; backend is a Node.js service. Both sit behind a reverse proxy or separate domains.
+
+---
+
+### Environment Variables
+
+```
+# server/.env  — never committed, never exposed to frontend
+MONGODB_URI=mongodb+srv://liltreats26_db_user:<password>@cluster0.y1sv9kc.mongodb.net
+DB_NAME=liltreats
+JWT_SECRET=<strong random string, min 32 chars>
+JWT_EXPIRES_IN=7d
+PORT=4000
+PAYMENT_GATEWAY_FEE_PERCENT=2
+PACKAGING_COST_DEFAULT=30
+
+# .env (frontend, safe to expose)
+VITE_API_URL=/api
+```
+
+---
+
+### Server Directory Structure
+
+```
+server/
+  index.ts                    ← Express app, port 4000
+  db.ts                       ← MongoDB connection via MONGODB_URI
+  middleware/
+    auth.ts                   ← JWT verify, attach req.user
+    adminGuard.ts             ← Reject if role != admin
+    errorHandler.ts           ← Centralised JSON error responses
+  models/
+    User.ts
+    Address.ts
+    Category.ts
+    Product.ts
+    ScoopConfig.ts
+    ScoopItemMapping.ts
+    VideoConfig.ts
+    VideoSlot.ts
+    VideoBooking.ts
+    Order.ts
+    ScoopBooking.ts
+    Inventory.ts
+    InventoryMovement.ts
+    Payment.ts
+    Delivery.ts
+    Notification.ts
+    AdminUser.ts
+    WebsiteContent.ts
+    Faq.ts
+  routes/
+    auth.ts                   ← POST /api/auth/register, login, forgot-password
+    products.ts               ← GET /api/products, /api/products/:slug
+    categories.ts             ← GET /api/categories
+    scoops.ts                 ← GET /api/scoops
+    scoopMappings.ts          ← GET|PUT /api/admin/scoop-mappings/:scoopId
+    video.ts                  ← GET /api/video/config, slots; POST reserve
+    orders.ts                 ← POST|GET /api/orders
+    bookings.ts               ← GET /api/bookings
+    inventory.ts              ← /api/admin/inventory/*
+    payments.ts               ← POST /api/payments/initiate, verify
+    delivery.ts               ← /api/admin/delivery/*
+    notifications.ts          ← GET /api/notifications, PUT read
+    admin/
+      customers.ts            ← /api/admin/customers
+      reports.ts              ← /api/admin/reports/*
+      profit.ts               ← /api/admin/profit
+      content.ts              ← /api/admin/content
+  services/
+    orderService.ts           ← Order creation, P&L snapshot calculation
+    inventoryService.ts       ← Idempotent auto-deduction, reversals
+    slotService.ts            ← Reservation, TTL release, conflict check
+    notificationService.ts    ← Create notifications for customer + admin
+  utils/
+    generateOrderNumber.ts    ← Atomic LT-YYYY-NNNNN counter
+    hashPassword.ts           ← bcrypt helpers
+    jwt.ts                    ← sign / verify helpers
+```
+
+---
+
+### Collections & Schemas
+
+#### `users`
+```
+_id, name, email, phone, passwordHash, role (customer|admin),
+status (active|suspended), createdAt, updatedAt, lastLoginAt
+```
+- Passwords hashed with bcrypt — never stored plain
+- `role` gates admin API access
+
+#### `addresses`
+```
+_id, userId, name, phone, house, street, area, city, state,
+pincode, label (Home|Work|Other), isDefault, createdAt, updatedAt
+```
+
+#### `categories`
+```
+_id, name, slug, isActive, sortOrder, createdAt
+```
+
+#### `products`
+```
+_id, sku (unique index), name, slug, description, images[],
+categoryId, costPrice, sellingPrice, currentStock, minimumStock,
+isActive, isFeatured, isNew, createdAt, updatedAt
+```
+- SKU enforced unique by MongoDB index
+- `currentStock` must never go below 0 (enforced in inventoryService)
+
+#### `scoopConfigs`
+```
+_id, tier (mini|magic|premium), name, slug, price, itemRange,
+description, images[], isActive, createdAt, updatedAt
+```
+Seed data:
+| Tier | Name | Price | Items |
+|------|------|-------|-------|
+| mini | Mini Scoop | ₹499 | 5–6 |
+| magic | Magic Scoop | ₹899 | 8–10 |
+| premium | Premium Scoop | ₹1099 | 10–12 |
+
+#### `scoopItemMappings`
+```
+_id, scoopId, productId, quantity, createdAt, updatedAt
+```
+- One record per product per scoop tier
+- Admin editable via admin panel (Module 19)
+- Drives automatic inventory deduction on order confirmation
+- Example: Magic Scoop → Charm A × 1, Bracelet B × 1, Sticker C × 2
+
+#### `videoConfig` (singleton)
+```
+_id, minimumLeadDays (default: 5), bookingWindowDays (default: 30),
+maxBookingsPerDay (default: 2), reservationTimeoutMinutes (default: 15)
+```
+- Admin-configurable; single document in collection
+
+#### `videoSlots`
+```
+_id, date (YYYY-MM-DD), startTime (HH:MM), endTime (HH:MM),
+maxCapacity (default: 1), bookedCount (default: 0),
+status (available|blocked), createdAt, updatedAt
+```
+- Each slot = 1 customer (maxCapacity: 1 per slot)
+- Daily cap of 2 = admin creates 2 slots per day
+- Admin can block individual slots
+
+#### `videoBookings`
+```
+_id, bookingId, orderId, userId, scoopBookingId, scoopTier,
+videoDate, videoSlotId, startTime, endTime,
+status (reserved|confirmed|completed|cancelled|expired),
+expiresAt (TTL index — auto-deleted after timeout if still reserved),
+createdAt, updatedAt
+```
+- MongoDB TTL index on `expiresAt` auto-expires reserved bookings
+
+#### `orders`
+```
+_id, orderNumber (LT-YYYY-NNNNN, unique), userId,
+items[] (embedded snapshots), scoopBookings[],
+subtotal, shippingCost, discount, paymentGatewayFee,
+packagingCost, otherCost, totalAmount,
+paymentStatus (pending|processing|successful|failed|refunded|cancelled),
+orderStatus (confirmed|preparing|packed|shipped|out_for_delivery|delivered|cancelled),
+deliveryStatus, shippingAddress (snapshot — never changes),
+costSnapshot, profitSnapshot,
+inventoryDeducted (boolean, default: false — idempotency flag),
+createdAt, updatedAt, cancelledAt, cancelReason
+```
+- `shippingAddress` is a snapshot, not a reference
+- `costSnapshot` + `profitSnapshot` saved at confirmation — historical P&L never affected by later price changes
+- `inventoryDeducted` prevents double-deduction on duplicate webhooks
+
+#### `order items (embedded in orders.items[])`
+```
+productId, sku, name, quantity,
+sellingPrice (snapshot), costPrice (snapshot), subtotal
+```
+- `costPrice` is the price AT TIME OF ORDER — not recalculated later
+
+#### `scoopBookings`
+```
+_id, bookingId, orderId, userId, scoopId, tier, scoopName,
+price, experience (with_video|without_video), videoBookingId,
+preferences { vibe[], favouriteCategories[], avoidNote },
+mappedItems[] (snapshot of mapping + cost at time of order),
+itemCostTotal, status, createdAt, updatedAt
+```
+- `mappedItems` is a snapshot — protects historical P&L if admin changes mapping later
+
+#### `inventory`
+```
+_id, productId, sku, currentStock, minimumStock,
+costPrice, stockValue (currentStock × costPrice), updatedAt
+```
+- Mirror of stock level; kept in sync via inventoryMovements
+
+#### `inventoryMovements`
+```
+_id, productId, sku,
+type (stock_entry|automatic_debit|manual_debit|adjustment|order_reversal),
+quantity (positive = added, negative = deducted),
+previousStock, newStock, reason,
+referenceType (order|admin|adjustment), referenceId,
+createdBy (userId), createdAt
+```
+- Every inventory change creates a movement — records never deleted
+- Order reversal creates a NEW movement (type: order_reversal), not delete original
+
+#### `payments`
+```
+_id, orderId, userId, orderNumber, amount, currency (INR),
+gateway (razorpay|manual), transactionId, paymentMethod,
+status (pending|processing|successful|failed|refunded|cancelled),
+gatewayResponse (raw — store full response),
+paidAt, createdAt, updatedAt
+```
+- Payment verification happens on backend via webhook — never trust client-side status
+- Idempotency: check if orderId already has a `successful` payment before processing webhook
+
+#### `deliveries`
+```
+_id, orderId, userId, courierName, trackingNumber, trackingUrl,
+status (preparing|packed|shipped|out_for_delivery|delivered|cancelled),
+shippedAt, deliveredAt, createdAt, updatedAt
+```
+
+#### `notifications`
+```
+_id, userId, type, title, message,
+referenceType (order|booking|inventory), referenceId,
+isRead (default: false), createdAt
+```
+Customer notification types:
+- `payment_successful`, `order_confirmed`, `video_booking_confirmed`
+- `order_packed`, `order_shipped`, `out_for_delivery`, `delivered`, `video_reminder`
+
+Admin notification types:
+- `new_order`, `new_payment`, `new_video_booking`
+- `low_stock`, `out_of_stock`, `failed_payment`
+
+#### `adminUsers`
+```
+_id, userId, name, email, role (super_admin), isActive, createdAt, updatedAt
+```
+
+#### `websiteContent`
+```
+_id, section (home|about|contact|announcement),
+content {}, images[], isActive, updatedAt, updatedBy
+```
+
+#### `faqs`
+```
+_id, question, answer, sortOrder, isActive, createdAt, updatedAt
+```
+
+---
+
+### API Routes
+
+#### Public (no auth required)
+```
+POST   /api/auth/register
+POST   /api/auth/login
+POST   /api/auth/forgot-password
+GET    /api/products
+GET    /api/products/:slug
+GET    /api/categories
+GET    /api/scoops
+GET    /api/video/config
+GET    /api/video/slots?date=YYYY-MM-DD
+GET    /api/content/:section
+GET    /api/faqs
+```
+
+#### Customer (JWT required, role: customer)
+```
+GET    /api/auth/me
+PUT    /api/auth/me
+GET    /api/addresses
+POST   /api/addresses
+PUT    /api/addresses/:id
+DELETE /api/addresses/:id
+POST   /api/orders
+GET    /api/orders
+GET    /api/orders/:id
+POST   /api/video/reserve              ← reserve slot (15-min TTL)
+DELETE /api/video/reserve/:id          ← release reservation
+GET    /api/bookings
+GET    /api/bookings/:id
+GET    /api/notifications
+PUT    /api/notifications/:id/read
+POST   /api/payments/initiate          ← create Razorpay order
+POST   /api/payments/verify            ← verify signature after gateway redirect
+```
+
+#### Admin (JWT required, role: admin)
+```
+GET    /api/admin/orders
+GET    /api/admin/orders/:id
+PUT    /api/admin/orders/:id/status
+PUT    /api/admin/orders/:id/cancel
+GET    /api/admin/scoop-bookings
+GET    /api/admin/video-bookings
+GET    /api/admin/video-config
+PUT    /api/admin/video-config
+POST   /api/admin/video-slots
+PUT    /api/admin/video-slots/:id
+DELETE /api/admin/video-slots/:id
+GET    /api/admin/products
+POST   /api/admin/products
+PUT    /api/admin/products/:id
+DELETE /api/admin/products/:id
+GET    /api/admin/scoop-mappings/:scoopId
+PUT    /api/admin/scoop-mappings/:scoopId
+GET    /api/admin/inventory
+POST   /api/admin/inventory/add-stock
+POST   /api/admin/inventory/manual-debit
+POST   /api/admin/inventory/adjust
+GET    /api/admin/inventory/:productId/history
+GET    /api/admin/payments
+GET    /api/admin/customers
+GET    /api/admin/customers/:id
+GET    /api/admin/profit
+GET    /api/admin/reports/sales
+GET    /api/admin/reports/inventory
+GET    /api/admin/reports/bookings
+GET    /api/admin/reports/customers
+GET    /api/admin/content
+PUT    /api/admin/content/:section
+GET    /api/admin/faqs
+POST   /api/admin/faqs
+PUT    /api/admin/faqs/:id
+DELETE /api/admin/faqs/:id
+GET    /api/admin/notifications
+```
+
+---
+
+### Critical Business Logic
+
+#### Order Confirmation — exact sequence
+```
+1.  Customer submits checkout → POST /api/orders (status: pending)
+2.  If With Video → slotService.reserve() → videoBooking status: reserved
+                    MongoDB TTL index auto-expires if payment not completed
+3.  POST /api/payments/initiate → create Razorpay order, return razorpay_order_id
+4.  Customer pays via Razorpay SDK on frontend
+5.  POST /api/payments/verify → backend verifies Razorpay signature
+6.  If verified:
+    a. payment.status = successful
+    b. order.paymentStatus = successful, order.orderStatus = confirmed
+    c. videoBooking.status = confirmed (expiresAt removed)
+    d. inventoryService.deductForOrder(orderId)  ← idempotent
+    e. costSnapshot + profitSnapshot calculated and saved to order
+    f. notificationService.createForCustomer(userId, "order_confirmed")
+    g. notificationService.createForAdmin("new_order")
+7.  Return order confirmation + orderNumber to frontend
+```
+
+#### Inventory Auto-Deduction — idempotent
+```
+inventoryService.deductForOrder(orderId):
+  1. Load order — if order.inventoryDeducted == true → return early (no duplicate)
+  2. Load scoopBookings for order → get mappedItems[] from each
+  3. Load order.items[] (individual products)
+  4. For each product to deduct:
+       - Check currentStock >= quantity → throw error if insufficient
+       - currentStock -= quantity
+       - Create inventoryMovement (type: automatic_debit, referenceType: order)
+  5. Set order.inventoryDeducted = true (atomic $set)
+```
+Duplicate payment webhooks cannot deduct stock twice — the flag blocks it.
+
+#### Video Slot Reservation — conflict prevention
+```
+slotService.reserve(date, slotId, userId):
+  1. Load videoConfig → get maxBookingsPerDay
+  2. Check date is within allowed window (minimumLeadDays to bookingWindowDays)
+  3. Count confirmed + reserved bookings for that date
+  4. If count >= maxBookingsPerDay → throw "Fully booked for this date"
+  5. Check that specific slot is not already booked or blocked
+  6. Create videoBooking:
+       status: reserved
+       expiresAt: now + reservationTimeoutMinutes
+  7. MongoDB TTL index automatically deletes expired reservations
+     → slot becomes available again with zero manual cleanup
+```
+
+#### Order Cancellation — reversal
+```
+1. Admin marks order cancelled
+2. If videoBooking exists → status = cancelled, slot.bookedCount -= 1
+3. If order.inventoryDeducted == true:
+     For each deducted item:
+       currentStock += quantity (add back)
+       Create inventoryMovement (type: order_reversal)
+     Set order.inventoryDeducted = false
+   Do NOT delete original deduction movements — audit trail must be complete
+4. If payment.status == successful → record refund (update payment.status = refunded)
+5. notificationService.createForCustomer(userId, "order_cancelled")
+```
+
+#### P&L Snapshot — saved at order confirmation
+```
+Revenue         = order.totalAmount
+ItemsCost       = sum(item.costPrice × item.quantity) for individual items
+ScoopItemsCost  = sum(mappedItem.costPrice × mappedItem.quantity) for scoop items
+PackagingCost   = config.packagingCostDefault (default ₹30)
+ShippingCost    = order.shippingCost
+GatewayFee      = order.totalAmount × (config.paymentGatewayFeePercent / 100)
+Discount        = order.discount
+TotalCost       = ItemsCost + ScoopItemsCost + PackagingCost + ShippingCost + GatewayFee + Discount
+NetProfit       = Revenue - TotalCost
+Margin          = (NetProfit / Revenue) × 100
+
+Saved as order.profitSnapshot — never recalculated, always historically accurate.
+```
+
+---
+
+### Frontend Integration Strategy
+
+No UI is rebuilt. Only `src/api/mockApi.ts` functions are swapped to call real `/api/*` endpoints. All routes, components, stores, and design stay exactly as-is.
+
+| Phase | Functions to swap | Endpoint group |
+|-------|-------------------|---------------|
+| A — Auth | `login()`, `signup()` | `/api/auth/*` |
+| B — Products & Scoops | `getProducts()`, `getScoopConfigs()` | `/api/products`, `/api/scoops` |
+| C — Video Slots | `getVideoSlots()`, `reserveSlot()` | `/api/video/*` |
+| D — Orders & Payment | `createOrder()`, `verifyPayment()` | `/api/orders`, `/api/payments/*` |
+| E — Customer Account | `getOrders()`, `getBookings()`, `getAddresses()` | `/api/orders`, `/api/bookings`, `/api/addresses` |
+| F — Admin | All admin mock functions | `/api/admin/*` |
+
+---
+
+### Build Steps (execute in order)
+
+| Step | Task |
+|------|------|
+| 1 | Create `server/` directory, `index.ts`, `db.ts` |
+| 2 | Install server deps: `express`, `mongoose`, `bcryptjs`, `jsonwebtoken`, `cors`, `dotenv` |
+| 3 | Create all 18 Mongoose models |
+| 4 | Create `generateOrderNumber` utility (atomic LT-YYYY-NNNNN) |
+| 5 | Create auth routes + JWT middleware |
+| 6 | Create product + category + scoop routes |
+| 7 | Create video slot routes + slotService (reservation + TTL) |
+| 8 | Create order routes + inventoryService (idempotent deduction) |
+| 9 | Create payment routes (initiate + verify) |
+| 10 | Create all admin routes |
+| 11 | Create notificationService |
+| 12 | Add Vite proxy config (`vite.config.ts`: proxy `/api` → `http://localhost:4000`) |
+| 13 | Seed database: 3 scoop configs, sample products, default videoConfig |
+| 14 | Replace mock API Phase A → F (one function at a time) |
+| 15 | Run all 7 test scenarios below — mark ✅ when all pass |
+
+---
+
+### Test Scenarios (all must pass before Module 30 is marked ✅)
+
+| # | Scenario | Expected result |
+|---|----------|----------------|
+| 1 | Magic Scoop + Video — successful payment | Order confirmed, slot booked, inventory deducted, P&L saved |
+| 2 | Payment failure | No confirmed order, slot released, inventory unchanged |
+| 3 | Duplicate payment webhook | Only one inventory deduction (idempotency flag blocks second) |
+| 4 | Two customers compete for last slot | Only first succeeds; second gets "Fully booked" error |
+| 5 | Order cancellation after confirmation | Slot released, inventory reversed, reversal movement logged |
+| 6 | Admin changes scoop mapping | Future orders use new mapping; historical orders unchanged |
+| 7 | Slot reservation timeout | Reserved booking auto-deleted by TTL; slot available again |
 
 ---
 
