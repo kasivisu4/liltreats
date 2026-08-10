@@ -39,7 +39,7 @@
 | 27 | Customer Notifications | ⬜ Not Started | P3 |
 | 28 | Admin Notifications | ⬜ Not Started | P3 |
 | 29 | Coupon / Discount System | ⬜ Not Started | Future |
-| 30 | Supabase Backend (Real Database) | ⬜ Not Started | Future |
+| 30 | MongoDB Backend Integration | ⬜ Not Started | P0 — Atlas URI provided, ready to build |
 
 ---
 
