@@ -155,6 +155,7 @@ function VesselButton({
 // ─── Detail panel (Option B accordion) ───────────────────────────────────────
 
 function DetailPanel({ tier, left }: { tier: Tier; left: number }) {
+  const navigate = useNavigate();
   const a = ACCENT_STYLES[tier.accent];
   const sold = left <= 0;
   const pct = Math.round((left / TOTAL_SLOTS[tier.id]) * 100);
