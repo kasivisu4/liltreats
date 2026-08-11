@@ -3,7 +3,7 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { Sparkles } from "lucide-react";
 import { TopBar } from "../components/TopBar";
 import { StockBar } from "../components/StockBar";
-import { useIndividualItems } from "../api/queries";
+import { SCOOP_ITEMS } from "../data/inventory";
 import type { ScoopItem } from "../data/inventory";
 import type { TierId } from "../data/tiers";
 
