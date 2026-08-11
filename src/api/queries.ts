@@ -1,116 +1,93 @@
+/**
+ * queries.ts — React Query hooks for all data fetching.
+ *
+ * ALL functions now call the real MongoDB backend via realApi.ts.
+ * mockApi.ts is kept as a reference but is no longer called here.
+ */
+
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { CreateOrderInput, OrderStatus } from "./mockApi";
 import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
-import {
-  addStock,
-  adjustStock,
-  blockVideoSlot,
-  createOrder,
-  fetchAllInventoryItems,
-  fetchAllOrders,
-  fetchAllScoopBookings,
-  fetchCustomers,
-  fetchDashboardStats,
-  fetchIndividualItems,
-  fetchInventory,
-  fetchInventoryMovements,
-  fetchOrders,
-  fetchScoopBookings,
-  fetchSlots,
-  fetchVideoSlots,
-  manualDebitStock,
-  saveProduct,
-  updateDelivery,
-  updateOrderStatus,
-  type CreateOrderInput,
-  type OrderStatus,
-} from "./mockApi";
+  fetchOrdersReal,
+  fetchAllOrdersReal,
+  createOrderReal,
+  updateOrderStatusReal,
+  updateDeliveryReal,
+  cancelOrderReal,
+  fetchVideoSlotsReal,
+  blockVideoSlotReal,
+  addVideoSlotReal,
+  deleteVideoSlotReal,
+  reserveVideoSlotReal,
+  releaseVideoSlotReal,
+  fetchVideoAvailabilityReal,
+  fetchVideoConfigReal,
+  fetchIndividualItemsReal,
+  fetchAllInventoryItemsReal,
+  fetchInventoryMovementsReal,
+  addStockReal,
+  manualDebitStockReal,
+  adjustStockReal,
+  saveProductReal,
+  fetchDashboardStatsReal,
+  fetchScoopBookingsReal,
+  fetchAllScoopBookingsReal,
+  fetchCustomersReal,
+  fetchScoopConfigsReal,
+  fetchCategoriesReal,
+  fetchNotificationsReal,
+  markNotificationReadReal,
+} from "./realApi";
+
+// ── Query keys ────────────────────────────────────────────────────────────────
 
 export const queryKeys = {
-  slots: ["slots"] as const,
-  inventory: ["inventory"] as const,
   orders: ["orders"] as const,
   allOrders: ["allOrders"] as const,
   scoopBookings: ["scoopBookings"] as const,
   allScoopBookings: ["allScoopBookings"] as const,
   videoSlots: (from: string, to: string) => ["videoSlots", from, to] as const,
+  videoAvailability: (from: string, to: string) => ["videoAvailability", from, to] as const,
+  videoConfig: ["videoConfig"] as const,
   individualItems: ["individualItems"] as const,
   allInventoryItems: ["allInventoryItems"] as const,
   inventoryMovements: (itemId?: string) => ["inventoryMovements", itemId ?? "all"] as const,
   customers: ["customers"] as const,
   dashboardStats: ["dashboardStats"] as const,
+  scoopConfigs: ["scoopConfigs"] as const,
+  categories: ["categories"] as const,
+  notifications: ["notifications"] as const,
 };
 
-export function useSlots() {
-  return useQuery({ queryKey: queryKeys.slots, queryFn: fetchSlots, staleTime: 30_000 });
-}
-
-export function useInventory() {
-  return useQuery({ queryKey: queryKeys.inventory, queryFn: fetchInventory, staleTime: 60_000 });
-}
+// ── Orders ────────────────────────────────────────────────────────────────────
 
 export function useOrders() {
-  return useQuery({ queryKey: queryKeys.orders, queryFn: () => fetchOrders() });
+  return useQuery({
+    queryKey: queryKeys.orders,
+    queryFn: fetchOrdersReal,
+    retry: 1,
+  });
 }
 
 export function useAllOrders() {
-  return useQuery({ queryKey: queryKeys.allOrders, queryFn: fetchAllOrders });
-}
-
-export function useScoopBookings() {
-  return useQuery({ queryKey: queryKeys.scoopBookings, queryFn: () => fetchScoopBookings() });
-}
-
-export function useAllScoopBookings() {
-  return useQuery({ queryKey: queryKeys.allScoopBookings, queryFn: fetchAllScoopBookings });
-}
-
-export function useVideoSlots(from: string, to: string) {
   return useQuery({
-    queryKey: queryKeys.videoSlots(from, to),
-    queryFn: () => fetchVideoSlots(from, to),
-    enabled: !!from && !!to,
-    staleTime: 15_000,
+    queryKey: queryKeys.allOrders,
+    queryFn: fetchAllOrdersReal,
+    retry: 1,
   });
-}
-
-export function useIndividualItems() {
-  return useQuery({ queryKey: queryKeys.individualItems, queryFn: fetchIndividualItems, staleTime: 60_000 });
-}
-
-export function useAllInventoryItems() {
-  return useQuery({ queryKey: queryKeys.allInventoryItems, queryFn: fetchAllInventoryItems, staleTime: 30_000 });
-}
-
-export function useInventoryMovements(itemId?: string) {
-  return useQuery({
-    queryKey: queryKeys.inventoryMovements(itemId),
-    queryFn: () => fetchInventoryMovements(itemId),
-  });
-}
-
-export function useCustomers() {
-  return useQuery({ queryKey: queryKeys.customers, queryFn: fetchCustomers });
-}
-
-export function useDashboardStats() {
-  return useQuery({ queryKey: queryKeys.dashboardStats, queryFn: fetchDashboardStats, staleTime: 60_000 });
 }
 
 export function useCreateOrder() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: CreateOrderInput) => createOrder(input),
+    mutationFn: (input: CreateOrderInput) => createOrderReal(input as Parameters<typeof createOrderReal>[0]),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: queryKeys.slots });
-      qc.invalidateQueries({ queryKey: queryKeys.orders });
-      qc.invalidateQueries({ queryKey: queryKeys.allOrders });
-      qc.invalidateQueries({ queryKey: queryKeys.scoopBookings });
-      qc.invalidateQueries({ queryKey: queryKeys.allScoopBookings });
-      qc.invalidateQueries({ queryKey: queryKeys.allInventoryItems });
-      qc.invalidateQueries({ queryKey: queryKeys.dashboardStats });
+      void qc.invalidateQueries({ queryKey: queryKeys.orders });
+      void qc.invalidateQueries({ queryKey: queryKeys.allOrders });
+      void qc.invalidateQueries({ queryKey: queryKeys.scoopBookings });
+      void qc.invalidateQueries({ queryKey: queryKeys.allScoopBookings });
+      void qc.invalidateQueries({ queryKey: queryKeys.allInventoryItems });
+      void qc.invalidateQueries({ queryKey: queryKeys.dashboardStats });
     },
   });
 }
@@ -119,11 +96,11 @@ export function useUpdateOrderStatus() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ orderId, status }: { orderId: string; status: OrderStatus }) =>
-      updateOrderStatus(orderId, status),
+      updateOrderStatusReal(orderId, status),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: queryKeys.allOrders });
-      qc.invalidateQueries({ queryKey: queryKeys.orders });
-      qc.invalidateQueries({ queryKey: queryKeys.dashboardStats });
+      void qc.invalidateQueries({ queryKey: queryKeys.allOrders });
+      void qc.invalidateQueries({ queryKey: queryKeys.orders });
+      void qc.invalidateQueries({ queryKey: queryKeys.dashboardStats });
     },
   });
 }
@@ -141,11 +118,130 @@ export function useUpdateDelivery() {
       courier: string;
       trackingNumber: string;
       trackingUrl: string;
-    }) => updateDelivery(orderId, courier, trackingNumber, trackingUrl),
+    }) => updateDeliveryReal(orderId, courier, trackingNumber, trackingUrl),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: queryKeys.allOrders });
-      qc.invalidateQueries({ queryKey: queryKeys.orders });
+      void qc.invalidateQueries({ queryKey: queryKeys.allOrders });
+      void qc.invalidateQueries({ queryKey: queryKeys.orders });
     },
+  });
+}
+
+export function useCancelOrder() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ orderId, reason }: { orderId: string; reason: string }) =>
+      cancelOrderReal(orderId, reason),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.allOrders });
+      void qc.invalidateQueries({ queryKey: queryKeys.orders });
+      void qc.invalidateQueries({ queryKey: queryKeys.dashboardStats });
+    },
+  });
+}
+
+// ── Video Slots ───────────────────────────────────────────────────────────────
+
+export function useVideoSlots(from: string, to: string) {
+  return useQuery({
+    queryKey: queryKeys.videoSlots(from, to),
+    queryFn: () => fetchVideoSlotsReal(from, to),
+    enabled: !!from && !!to,
+    staleTime: 15_000,
+    retry: 1,
+  });
+}
+
+export function useVideoAvailability(from: string, to: string) {
+  return useQuery({
+    queryKey: queryKeys.videoAvailability(from, to),
+    queryFn: () => fetchVideoAvailabilityReal(from, to),
+    enabled: !!from && !!to,
+    staleTime: 15_000,
+    retry: 1,
+  });
+}
+
+export function useVideoConfig() {
+  return useQuery({
+    queryKey: queryKeys.videoConfig,
+    queryFn: fetchVideoConfigReal,
+    staleTime: 5 * 60_000,
+    retry: 1,
+  });
+}
+
+export function useBlockVideoSlot() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ slotId, blocked }: { slotId: string; blocked: boolean }) =>
+      blockVideoSlotReal(slotId, blocked),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["videoSlots"] });
+      void qc.invalidateQueries({ queryKey: ["videoAvailability"] });
+    },
+  });
+}
+
+export function useAddVideoSlot() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ date, startTime, endTime }: { date: string; startTime: string; endTime?: string }) =>
+      addVideoSlotReal(date, startTime, endTime),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["videoSlots"] });
+      void qc.invalidateQueries({ queryKey: ["videoAvailability"] });
+    },
+  });
+}
+
+export function useDeleteVideoSlot() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (slotId: string) => deleteVideoSlotReal(slotId),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["videoSlots"] });
+      void qc.invalidateQueries({ queryKey: ["videoAvailability"] });
+    },
+  });
+}
+
+export function useReserveVideoSlot() {
+  return useMutation({
+    mutationFn: (slotId: string) => reserveVideoSlotReal(slotId),
+  });
+}
+
+export function useReleaseVideoSlot() {
+  return useMutation({
+    mutationFn: (reservationId: string) => releaseVideoSlotReal(reservationId),
+  });
+}
+
+// ── Individual Items / Inventory ──────────────────────────────────────────────
+
+export function useIndividualItems() {
+  return useQuery({
+    queryKey: queryKeys.individualItems,
+    queryFn: fetchIndividualItemsReal,
+    staleTime: 60_000,
+    retry: 1,
+  });
+}
+
+export function useAllInventoryItems() {
+  return useQuery({
+    queryKey: queryKeys.allInventoryItems,
+    queryFn: fetchAllInventoryItemsReal,
+    staleTime: 30_000,
+    retry: 1,
+  });
+}
+
+export function useInventoryMovements(itemId?: string) {
+  return useQuery({
+    queryKey: queryKeys.inventoryMovements(itemId),
+    queryFn: () => fetchInventoryMovementsReal(itemId),
+    retry: 1,
   });
 }
 
@@ -162,11 +258,11 @@ export function useAddStock() {
       qty: number;
       costPrice: number;
       note: string;
-    }) => addStock(itemId, qty, costPrice, note),
+    }) => addStockReal(itemId, qty, costPrice, note),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: queryKeys.allInventoryItems });
-      qc.invalidateQueries({ queryKey: queryKeys.inventoryMovements() });
-      qc.invalidateQueries({ queryKey: queryKeys.dashboardStats });
+      void qc.invalidateQueries({ queryKey: queryKeys.allInventoryItems });
+      void qc.invalidateQueries({ queryKey: ["inventoryMovements"] });
+      void qc.invalidateQueries({ queryKey: queryKeys.dashboardStats });
     },
   });
 }
@@ -174,18 +270,11 @@ export function useAddStock() {
 export function useManualDebit() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({
-      itemId,
-      qty,
-      reason,
-    }: {
-      itemId: string;
-      qty: number;
-      reason: string;
-    }) => manualDebitStock(itemId, qty, reason),
+    mutationFn: ({ itemId, qty, reason }: { itemId: string; qty: number; reason: string }) =>
+      manualDebitStockReal(itemId, qty, reason),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: queryKeys.allInventoryItems });
-      qc.invalidateQueries({ queryKey: queryKeys.inventoryMovements() });
+      void qc.invalidateQueries({ queryKey: queryKeys.allInventoryItems });
+      void qc.invalidateQueries({ queryKey: ["inventoryMovements"] });
     },
   });
 }
@@ -193,18 +282,11 @@ export function useManualDebit() {
 export function useAdjustStock() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({
-      itemId,
-      newQty,
-      reason,
-    }: {
-      itemId: string;
-      newQty: number;
-      reason: string;
-    }) => adjustStock(itemId, newQty, reason),
+    mutationFn: ({ itemId, newQty, reason }: { itemId: string; newQty: number; reason: string }) =>
+      adjustStockReal(itemId, newQty, reason),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: queryKeys.allInventoryItems });
-      qc.invalidateQueries({ queryKey: queryKeys.inventoryMovements() });
+      void qc.invalidateQueries({ queryKey: queryKeys.allInventoryItems });
+      void qc.invalidateQueries({ queryKey: ["inventoryMovements"] });
     },
   });
 }
@@ -212,22 +294,97 @@ export function useAdjustStock() {
 export function useSaveProduct() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: saveProduct,
+    mutationFn: saveProductReal,
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: queryKeys.allInventoryItems });
-      qc.invalidateQueries({ queryKey: queryKeys.individualItems });
+      void qc.invalidateQueries({ queryKey: queryKeys.allInventoryItems });
+      void qc.invalidateQueries({ queryKey: queryKeys.individualItems });
     },
   });
 }
 
-export function useBlockVideoSlot() {
+// ── Dashboard ─────────────────────────────────────────────────────────────────
+
+export function useDashboardStats() {
+  return useQuery({
+    queryKey: queryKeys.dashboardStats,
+    queryFn: fetchDashboardStatsReal,
+    staleTime: 60_000,
+    retry: 1,
+  });
+}
+
+// ── Scoop Bookings ────────────────────────────────────────────────────────────
+
+export function useScoopBookings() {
+  return useQuery({
+    queryKey: queryKeys.scoopBookings,
+    queryFn: fetchScoopBookingsReal,
+    retry: 1,
+  });
+}
+
+export function useAllScoopBookings() {
+  return useQuery({
+    queryKey: queryKeys.allScoopBookings,
+    queryFn: fetchAllScoopBookingsReal,
+    retry: 1,
+  });
+}
+
+// ── Customers ─────────────────────────────────────────────────────────────────
+
+export function useCustomers() {
+  return useQuery({
+    queryKey: queryKeys.customers,
+    queryFn: fetchCustomersReal,
+    retry: 1,
+  });
+}
+
+// ── Scoop Configs ─────────────────────────────────────────────────────────────
+
+export function useScoopConfigs() {
+  return useQuery({
+    queryKey: queryKeys.scoopConfigs,
+    queryFn: fetchScoopConfigsReal,
+    staleTime: 5 * 60_000,
+    retry: 1,
+  });
+}
+
+// ── Categories ────────────────────────────────────────────────────────────────
+
+export function useCategories() {
+  return useQuery({
+    queryKey: queryKeys.categories,
+    queryFn: fetchCategoriesReal,
+    staleTime: 5 * 60_000,
+    retry: 1,
+  });
+}
+
+// ── Notifications ─────────────────────────────────────────────────────────────
+
+export function useNotifications() {
+  return useQuery({
+    queryKey: queryKeys.notifications,
+    queryFn: fetchNotificationsReal,
+    staleTime: 30_000,
+    retry: 1,
+  });
+}
+
+export function useMarkNotificationRead() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ slotId, blocked }: { slotId: string; blocked: boolean }) =>
-      blockVideoSlot(slotId, blocked),
-    onSuccess: (_data, vars) => {
-      // Invalidate all video slot queries
-      qc.invalidateQueries({ queryKey: ["videoSlots"] });
+    mutationFn: (notificationId: string) => markNotificationReadReal(notificationId),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.notifications });
     },
   });
 }
+
+// ── Legacy stubs (kept for any route files still importing these names) ────────
+// These redirect to real backend equivalents.
+
+export { useVideoSlots as useSlots };
