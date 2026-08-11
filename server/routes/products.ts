@@ -39,19 +39,8 @@ router.get("/", async (req, res) => {
   }
 });
 
-// GET /api/products/:id
-router.get("/:id", async (req, res) => {
-  try {
-    const product = await Product.findById(req.params.id).populate("categoryId", "name").lean();
-    if (!product) { res.status(404).json({ error: "Product not found." }); return; }
-    const inv = await Inventory.findOne({ productId: product._id }).lean();
-    res.json({ product: { ...product, currentStock: inv?.currentStock ?? 0 } });
-  } catch (err) {
-    res.status(500).json({ error: "Could not fetch product." });
-  }
-});
-
 // GET /api/products/admin/all  — admin: all products including inactive
+// NOTE: must be before /:id so "admin" is not treated as a product ID
 router.get("/admin/all", requireAdmin, async (req, res) => {
   try {
     const products = await Product.find({}).populate("categoryId", "name").lean();
