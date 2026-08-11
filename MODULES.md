@@ -194,7 +194,7 @@ Home → tap tier → tap "Book Now" → /book/$tier
 - Login tab: email + password with inline field validation and server error banner
 - Signup tab: name, phone, email, password, confirm password — all validated
 - Forgot password view: email input → mock "check your inbox" success screen
-- Auth store (`src/store/authStore.ts`): persisted via zustand, mock login/signup, Supabase-ready shape
+- Auth store (`src/store/authStore.ts`): persisted via zustand, wired to real `/api/auth/login` + `/api/auth/signup` endpoints
 - Redirect to `/account` (or `?redirect=` param) after successful auth
 - Google / OTP social login buttons (UI only, wired when Supabase is connected)
 - Animated field error messages, loading spinner, success state
