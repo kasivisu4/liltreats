@@ -5,53 +5,9 @@ import { requireAdmin } from "../../middleware/auth.js";
 
 const router = Router();
 
-// ── Website Content ───────────────────────────────────────────────────────────
+// ── FAQs — registered BEFORE /:section to avoid route conflicts ───────────────
 
-// GET /api/admin/content/:section  — public
-router.get("/:section", async (req, res) => {
-  try {
-    const content = await WebsiteContent.findOne({ section: req.params.section }).lean();
-    res.json({ content: content ?? null });
-  } catch (err) {
-    res.status(500).json({ error: "Could not fetch content." });
-  }
-});
-
-// GET /api/admin/content  — admin: all sections
-router.get("/", requireAdmin, async (_req, res) => {
-  try {
-    const content = await WebsiteContent.find({}).lean();
-    res.json({ content });
-  } catch (err) {
-    res.status(500).json({ error: "Could not fetch content." });
-  }
-});
-
-// PUT /api/admin/content/:section  — admin: upsert a section
-router.put("/:section", requireAdmin, async (req, res) => {
-  try {
-    const { content: contentData, images, isActive } = req.body;
-    const doc = await WebsiteContent.findOneAndUpdate(
-      { section: req.params.section },
-      {
-        $set: {
-          content: contentData,
-          images: images ?? [],
-          isActive: isActive ?? true,
-          updatedBy: req.user!.userId,
-        },
-      },
-      { upsert: true, new: true },
-    );
-    res.json({ content: doc });
-  } catch (err) {
-    res.status(500).json({ error: "Could not update content." });
-  }
-});
-
-// ── FAQs ──────────────────────────────────────────────────────────────────────
-
-// GET /api/admin/content/faqs  — public
+// GET /api/admin/content/faqs/list  — public: active FAQs
 router.get("/faqs/list", async (_req, res) => {
   try {
     const faqs = await Faq.find({ isActive: true }).sort({ sortOrder: 1 }).lean();
@@ -79,7 +35,7 @@ router.post("/faqs", requireAdmin, async (req, res) => {
       res.status(400).json({ error: "question and answer are required." });
       return;
     }
-    const faq = await Faq.create({ question, answer, sortOrder: sortOrder ?? 0 });
+    const faq = await Faq.create({ question, answer, sortOrder: sortOrder ?? 0, isActive: true });
     res.status(201).json({ faq });
   } catch (err) {
     res.status(500).json({ error: "Could not create FAQ." });
@@ -104,6 +60,50 @@ router.delete("/faqs/:id", requireAdmin, async (req, res) => {
     res.json({ message: "FAQ deleted." });
   } catch (err) {
     res.status(500).json({ error: "Could not delete FAQ." });
+  }
+});
+
+// ── Website Content — /:section must come AFTER /faqs/* routes ───────────────
+
+// GET /api/admin/content  — admin: all sections
+router.get("/", requireAdmin, async (_req, res) => {
+  try {
+    const content = await WebsiteContent.find({}).lean();
+    res.json({ content });
+  } catch (err) {
+    res.status(500).json({ error: "Could not fetch content." });
+  }
+});
+
+// GET /api/admin/content/:section  — public
+router.get("/:section", async (req, res) => {
+  try {
+    const content = await WebsiteContent.findOne({ section: req.params.section }).lean();
+    res.json({ content: content ?? null });
+  } catch (err) {
+    res.status(500).json({ error: "Could not fetch content." });
+  }
+});
+
+// PUT /api/admin/content/:section  — admin: upsert a section
+router.put("/:section", requireAdmin, async (req, res) => {
+  try {
+    const { content: contentData, images, isActive } = req.body;
+    const doc = await WebsiteContent.findOneAndUpdate(
+      { section: req.params.section },
+      {
+        $set: {
+          content: contentData,
+          images: images ?? [],
+          isActive: isActive ?? true,
+          updatedBy: req.user!.userId,
+        },
+      },
+      { upsert: true, new: true },
+    );
+    res.json({ content: doc });
+  } catch (err) {
+    res.status(500).json({ error: "Could not update content." });
   }
 });
 
