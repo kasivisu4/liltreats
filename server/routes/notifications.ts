@@ -32,4 +32,17 @@ router.patch("/read-all", requireAuth, async (req, res) => {
   }
 });
 
+// PATCH /api/notifications/:id/read  — mark single as read
+router.patch("/:id/read", requireAuth, async (req, res) => {
+  try {
+    await Notification.findOneAndUpdate(
+      { _id: req.params.id, userId: req.user!.userId },
+      { $set: { isRead: true } },
+    );
+    res.json({ message: "Marked as read." });
+  } catch (err) {
+    res.status(500).json({ error: "Could not mark notification." });
+  }
+});
+
 export default router;
