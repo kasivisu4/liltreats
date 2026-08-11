@@ -1,14 +1,241 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "@tanstack/react-router";
+import { ChevronLeft, ChevronRight, Calendar, Clock } from "lucide-react";
 import { Screen } from "../components/Screen";
 import { TopBar } from "../components/TopBar";
-import { StepIndicator } from "../components/StepIndicator";
-import { VideoSlotPicker } from "../components/VideoSlotPicker";
 import { TIERS, TIER_BY_ID, VIDEO_ADDON_PRICE, type TierId } from "../data/tiers";
 import { FAV_CATEGORIES, VIBES, useCartStore } from "../store/cartStore";
+import { useVideoSlots } from "../api/queries";
 
 const VALID = new Set(TIERS.map((t) => t.id));
 
+// ── Inline StepIndicator ───────────────────────────────────────────────────────
+function StepIndicator({ current }: { current: number }) {
+  const steps = ["Choose scoop", "Preferences", "Checkout"];
+  return (
+    <div className="flex items-center justify-center gap-0 border-b border-line bg-white/60 px-4 py-2.5">
+      {steps.map((label, i) => {
+        const done = i < current;
+        const active = i === current;
+        return (
+          <div key={label} className="flex items-center">
+            <div className="flex flex-col items-center">
+              <div
+                className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold ${
+                  done
+                    ? "bg-sage-DEFAULT text-white"
+                    : active
+                      ? "bg-deep text-white"
+                      : "bg-line text-ink-mute"
+                }`}
+              >
+                {done ? "✓" : i + 1}
+              </div>
+              <span
+                className={`mt-0.5 text-[9px] font-bold ${active ? "text-deep" : "text-ink-mute"}`}
+              >
+                {label}
+              </span>
+            </div>
+            {i < steps.length - 1 && (
+              <div
+                className={`mx-1.5 mb-3 h-[2px] w-8 rounded-full ${done ? "bg-sage-DEFAULT" : "bg-line"}`}
+              />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Inline VideoSlotPicker ─────────────────────────────────────────────────────
+function VideoSlotPicker() {
+  const setVideoSlot = useCartStore((s) => s.setVideoSlot);
+  const selectedSlotId = useCartStore((s) => s.selectedVideoSlotId);
+  const selectedDate = useCartStore((s) => s.selectedVideoDate);
+
+  const today = new Date();
+  const minDate = new Date(today);
+  minDate.setDate(today.getDate() + 5);
+  const maxDate = new Date(minDate);
+  maxDate.setDate(minDate.getDate() + 30);
+
+  const fromStr = minDate.toISOString().split("T")[0];
+  const toStr = maxDate.toISOString().split("T")[0];
+
+  const { data: slots = [] } = useVideoSlots(fromStr, toStr);
+
+  // Group slots by date
+  const byDate: Record<string, typeof slots> = {};
+  slots.forEach((s) => {
+    if (!byDate[s.date]) byDate[s.date] = [];
+    byDate[s.date].push(s);
+  });
+
+  const dates = Object.keys(byDate).sort();
+
+  // Week navigation
+  const [weekStart, setWeekStart] = useState(0);
+  const DAYS_PER_PAGE = 7;
+  const visibleDates = dates.slice(weekStart, weekStart + DAYS_PER_PAGE);
+
+  function fmtDate(dateStr: string) {
+    const d = new Date(dateStr + "T00:00:00");
+    return {
+      day: d.toLocaleDateString("en-IN", { weekday: "short" }),
+      date: d.toLocaleDateString("en-IN", { day: "numeric", month: "short" }),
+    };
+  }
+
+  function isDayFull(dateStr: string) {
+    const daySlots = byDate[dateStr] ?? [];
+    const totalBooked = daySlots.reduce((s, sl) => s + sl.bookedCount, 0);
+    const totalCap = daySlots.reduce((s, sl) => s + sl.maxCapacity, 0);
+    return totalBooked >= totalCap;
+  }
+
+  const slotsForDate = selectedDate ? (byDate[selectedDate] ?? []) : [];
+
+  return (
+    <div className="rounded-2xl border border-gold-light bg-white/70 p-4">
+      <div className="mb-3 flex items-center gap-2">
+        <Calendar size={16} className="text-gold" />
+        <span className="font-serif text-[14px] font-bold text-deep">
+          Select your video date
+        </span>
+      </div>
+
+      <p className="mb-3 text-[11px] font-semibold leading-relaxed text-ink-soft">
+        Video dates open from{" "}
+        <span className="font-bold text-deep">
+          {minDate.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+        </span>{" "}
+        — maximum 2 bookings per day.
+      </p>
+
+      {/* Date picker row */}
+      <div className="mb-4">
+        <div className="mb-2 flex items-center justify-between">
+          <button
+            onClick={() => setWeekStart(Math.max(0, weekStart - DAYS_PER_PAGE))}
+            disabled={weekStart === 0}
+            className="flex h-7 w-7 items-center justify-center rounded-full border border-line bg-white/70 disabled:opacity-30"
+          >
+            <ChevronLeft size={14} />
+          </button>
+          <span className="text-[11px] font-bold text-ink-mute">
+            {visibleDates[0] ? fmtDate(visibleDates[0]).date : ""} —{" "}
+            {visibleDates[visibleDates.length - 1]
+              ? fmtDate(visibleDates[visibleDates.length - 1]).date
+              : ""}
+          </span>
+          <button
+            onClick={() =>
+              setWeekStart(Math.min(dates.length - DAYS_PER_PAGE, weekStart + DAYS_PER_PAGE))
+            }
+            disabled={weekStart + DAYS_PER_PAGE >= dates.length}
+            className="flex h-7 w-7 items-center justify-center rounded-full border border-line bg-white/70 disabled:opacity-30"
+          >
+            <ChevronRight size={14} />
+          </button>
+        </div>
+        <div className="grid grid-cols-7 gap-1">
+          {visibleDates.map((dateStr) => {
+            const full = isDayFull(dateStr);
+            const selected = selectedDate === dateStr;
+            const { day, date } = fmtDate(dateStr);
+            return (
+              <button
+                key={dateStr}
+                disabled={full}
+                onClick={() => {
+                  // Clear slot when changing date
+                  useCartStore.setState({
+                    selectedVideoDate: dateStr,
+                    selectedVideoSlotId: null,
+                    selectedVideoTime: null,
+                  });
+                }}
+                className={`flex flex-col items-center rounded-xl border py-2 text-center transition-all ${
+                  selected
+                    ? "border-rose bg-blush shadow-sm"
+                    : full
+                      ? "border-line bg-white/30 opacity-40"
+                      : "border-line bg-white/60 hover:border-gold"
+                }`}
+              >
+                <span className="text-[9px] font-bold uppercase tracking-wide text-ink-mute">
+                  {day}
+                </span>
+                <span
+                  className={`text-[11px] font-bold ${selected ? "text-deep" : full ? "text-ink-mute" : "text-deep"}`}
+                >
+                  {date.split(" ")[0]}
+                </span>
+                <span className="text-[8px] font-semibold text-ink-mute">
+                  {date.split(" ")[1]}
+                </span>
+                {full && (
+                  <span className="mt-0.5 text-[7px] font-bold text-rose">Full</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Slot picker */}
+      {selectedDate && (
+        <div>
+          <div className="mb-2 flex items-center gap-1.5">
+            <Clock size={13} className="text-gold" />
+            <span className="text-[12px] font-bold text-deep">Available time slots</span>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {slotsForDate.map((slot) => {
+              const available =
+                !slot.isBlocked && slot.bookedCount < slot.maxCapacity;
+              const isSelected = selectedSlotId === slot.id;
+              return (
+                <button
+                  key={slot.id}
+                  disabled={!available}
+                  onClick={() =>
+                    setVideoSlot(slot.id, slot.date, slot.time)
+                  }
+                  className={`rounded-xl border py-2.5 text-[11px] font-bold transition-all ${
+                    isSelected
+                      ? "border-rose bg-blush text-deep shadow-sm"
+                      : available
+                        ? "border-line bg-white/60 text-deep hover:border-gold"
+                        : "border-line bg-white/30 text-ink-mute opacity-40"
+                  }`}
+                >
+                  {slot.time}
+                  {!available && (
+                    <div className="text-[8px] font-semibold text-rose">Booked</div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {selectedSlotId && (
+        <div className="mt-3 rounded-xl border border-sage-DEFAULT/30 bg-[#EAF4EA] px-3 py-2 text-center">
+          <span className="text-[12px] font-bold text-sage-DEFAULT">
+            ✓ Video slot confirmed — {selectedDate} at{" "}
+            {slotsForDate.find((s) => s.id === selectedSlotId)?.time}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Main route ─────────────────────────────────────────────────────────────────
 export function PreferencesRoute() {
   const navigate = useNavigate();
   const { tier } = useParams({ strict: false }) as { tier?: string };
@@ -157,7 +384,7 @@ export function PreferencesRoute() {
           </button>
         </div>
 
-        {/* Video slot picker — only shows when with-video is selected */}
+        {/* Video slot picker */}
         {videoAddon && (
           <div className="mb-5">
             <VideoSlotPicker />
