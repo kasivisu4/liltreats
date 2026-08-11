@@ -57,6 +57,18 @@ router.get("/admin/all", requireAdmin, async (req, res) => {
   }
 });
 
+// GET /api/products/:id
+router.get("/:id", async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id).populate("categoryId", "name").lean();
+    if (!product) { res.status(404).json({ error: "Product not found." }); return; }
+    const inv = await Inventory.findOne({ productId: product._id }).lean();
+    res.json({ product: { ...product, currentStock: inv?.currentStock ?? 0 } });
+  } catch (err) {
+    res.status(500).json({ error: "Could not fetch product." });
+  }
+});
+
 // POST /api/products  — admin only
 router.post("/", requireAdmin, async (req, res) => {
   try {
