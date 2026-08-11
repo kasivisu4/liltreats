@@ -57,6 +57,7 @@ export interface OrderItem {
 
 export interface Order {
   id: string;
+  _id?: string; // MongoDB ObjectId (present when fetched from real backend)
   customerId: string;
   customerName: string;
   customerPhone: string;
