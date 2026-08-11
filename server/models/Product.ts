@@ -33,7 +33,7 @@ const ProductSchema = new Schema<IProduct>(
     minimumStock: { type: Number, required: true, min: 0, default: 5 },
     isActive: { type: Boolean, default: true },
     isFeatured: { type: Boolean, default: false },
-    isNew: { type: Boolean, default: false },
+    isNewArrival: { type: Boolean, default: false },
     isLimited: { type: Boolean, default: false },
   },
   { timestamps: true },
