@@ -29,6 +29,7 @@ import {
 } from "./mockApi";
 
 export const queryKeys = {
+  slots: ["slots"] as const,
   orders: ["orders"] as const,
   allOrders: ["allOrders"] as const,
   scoopBookings: ["scoopBookings"] as const,
