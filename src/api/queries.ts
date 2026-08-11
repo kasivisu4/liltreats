@@ -5,6 +5,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  fetchSlots,
   fetchOrders,
   fetchAllOrders,
   createOrder,
