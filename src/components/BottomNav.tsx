@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
-import { Home, Sparkles, Receipt, MessageCircle } from "lucide-react";
+import { Home, Sparkles, Receipt, UserCircle } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { useAuthStore } from "../store/authStore";
 
 interface Tab {
   to: string;
@@ -11,8 +12,8 @@ interface Tab {
 const TABS: Tab[] = [
   { to: "/", label: "Home", icon: Home },
   { to: "/inventory", label: "Scoops", icon: Sparkles },
-  { to: "/orders", label: "My orders", icon: Receipt },
-  { to: "/contact", label: "Contact", icon: MessageCircle },
+  { to: "/orders", label: "Orders", icon: Receipt },
+  { to: "/account", label: "Account", icon: UserCircle },
 ];
 
 export function BottomNav() {
