@@ -42,6 +42,12 @@ export const queryKeys = {
   dashboardStats: ["dashboardStats"] as const,
 };
 
+// ── Weekly slots (home page tier availability) ────────────────────────────────
+
+export function useSlots() {
+  return useQuery({ queryKey: queryKeys.slots, queryFn: fetchSlots, staleTime: 60_000 });
+}
+
 // ── Orders ────────────────────────────────────────────────────────────────────
 
 export function useOrders() {
