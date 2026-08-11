@@ -39,7 +39,7 @@
 | 27 | Customer Notifications | ⬜ Not Started | P3 |
 | 28 | Admin Notifications | ⬜ Not Started | P3 |
 | 29 | Coupon / Discount System | ⬜ Not Started | Future |
-| 30 | MongoDB Backend Integration | ✅ Connected | MongoDB Atlas connected, all 112 files deploying, all 27 routes restored |
+| 30 | MongoDB Backend Integration | ✅ Connected | Atlas connected · authStore wired · 2 seed users created on startup |
 
 ---
 
