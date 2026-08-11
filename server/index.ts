@@ -60,7 +60,7 @@ app.use((err: Error, _req: express.Request, res: express.Response, _next: expres
   res.status(500).json({ error: "Internal server error." });
 });
 
-// ── Start ─────────────────────────────────────────────────────────────────────
+// ── Start ──────────────────────────────────────────────────────────────────── v2
 async function start() {
   // Start the HTTP server first so the frontend is always reachable,
   // then attempt MongoDB connection. If Atlas rejects (IP not whitelisted)
