@@ -28,6 +28,33 @@ interface AuthState {
   setDefaultAddress: (id: string) => void;
 }
 
+const API = "/api/auth";
+
+async function apiFetch(path: string, body: object) {
+  const res = await fetch(`${API}${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Something went wrong. Please try again.");
+  return data;
+}
+
+function toAuthUser(u: any, joinedAt?: string): AuthUser {
+  return {
+    id: u.id || u._id,
+    name: u.name,
+    phone: u.phone || "",
+    email: u.email,
+    instagram: u.instagram || "",
+    joinedAt: joinedAt || u.createdAt || new Date().toISOString(),
+    totalSpend: u.totalSpend || 0,
+    addresses: [],
+    role: u.role || "customer",
+  };
+}
+
 let addrSeq = 100;
 
 export const useAuthStore = create<AuthState>()(
@@ -38,45 +65,27 @@ export const useAuthStore = create<AuthState>()(
       isLoggedIn: false,
 
       login: async (email, password) => {
-        // Mock login — swap for real API call in Module 30
-        await new Promise((r) => setTimeout(r, 800));
-        if (password.length < 6) throw new Error("Invalid email or password.");
-        const mockUser: AuthUser = {
-          id: "u001",
-          name: email.split("@")[0],
-          phone: "+91 98765 43210",
-          email,
-          instagram: "@liltreats_fan",
-          joinedAt: new Date().toISOString(),
-          totalSpend: 0,
-          addresses: [],
-          role: "customer",
-        };
-        set({ user: mockUser, token: "mock-jwt-token", isLoggedIn: true });
+        const data = await apiFetch("/login", { email, password });
+        set({
+          user: toAuthUser(data.user),
+          token: data.token,
+          isLoggedIn: true,
+        });
       },
 
-      signup: async (name, phone, email, _password) => {
-        await new Promise((r) => setTimeout(r, 900));
-        const mockUser: AuthUser = {
-          id: `u-${Date.now()}`,
-          name,
-          phone,
-          email,
-          instagram: "",
-          joinedAt: new Date().toISOString(),
-          totalSpend: 0,
-          addresses: [],
-          role: "customer",
-        };
-        set({ user: mockUser, token: "mock-jwt-token", isLoggedIn: true });
+      signup: async (name, phone, email, password) => {
+        const data = await apiFetch("/signup", { name, phone, email, password });
+        set({
+          user: toAuthUser(data.user),
+          token: data.token,
+          isLoggedIn: true,
+        });
       },
 
       logout: () => set({ user: null, token: null, isLoggedIn: false }),
 
       updateProfile: (fields) =>
-        set((s) =>
-          s.user ? { user: { ...s.user, ...fields } } : {},
-        ),
+        set((s) => (s.user ? { user: { ...s.user, ...fields } } : {})),
 
       addAddress: (addr) => {
         const id = `addr-${String(addrSeq++).padStart(3, "0")}`;
