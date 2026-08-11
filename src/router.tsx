@@ -11,29 +11,9 @@ import { CartRoute } from "./routes/CartRoute";
 import { ConfirmRoute } from "./routes/ConfirmRoute";
 import { OrdersRoute } from "./routes/OrdersRoute";
 import { ContactRoute } from "./routes/ContactRoute";
-import { ShopRoute } from "./routes/ShopRoute";
-import { ShopItemRoute } from "./routes/ShopItemRoute";
-import { AccountRoute } from "./routes/AccountRoute";
-import { BookingsRoute } from "./routes/BookingsRoute";
-import { LoginRoute } from "./routes/LoginRoute";
-import { HowItWorksRoute } from "./routes/HowItWorksRoute";
-import { AdminLayout } from "./routes/admin/AdminLayout";
-import { AdminDashboardRoute } from "./routes/admin/AdminDashboardRoute";
-import { AdminOrdersRoute } from "./routes/admin/AdminOrdersRoute";
-import { AdminVideoBookingsRoute } from "./routes/admin/AdminVideoBookingsRoute";
-import { AdminInventoryRoute } from "./routes/admin/AdminInventoryRoute";
-import { AdminProductsRoute } from "./routes/admin/AdminProductsRoute";
-import { AdminCustomersRoute } from "./routes/admin/AdminCustomersRoute";
-import { AdminProfitRoute } from "./routes/admin/AdminProfitRoute";
-import { AdminScoopBookingsRoute } from "./routes/admin/AdminScoopBookingsRoute";
-import { AdminReportsRoute } from "./routes/admin/AdminReportsRoute";
-import { AdminScoopManagementRoute } from "./routes/admin/AdminScoopManagementRoute";
-import { AdminDeliveryRoute } from "./routes/admin/AdminDeliveryRoute";
-import { AdminPaymentsRoute } from "./routes/admin/AdminPaymentsRoute";
 
 const rootRoute = createRootRoute({ component: AppLayout });
 
-// Customer routes
 const indexRoute = createRoute({ getParentRoute: () => rootRoute, path: "/", component: HomeRoute });
 const inventoryRoute = createRoute({ getParentRoute: () => rootRoute, path: "/inventory", component: InventoryRoute });
 const bookRoute = createRoute({ getParentRoute: () => rootRoute, path: "/book/$tier", component: PreferencesRoute });
@@ -41,14 +21,18 @@ const cartRoute = createRoute({ getParentRoute: () => rootRoute, path: "/cart", 
 const confirmRoute = createRoute({ getParentRoute: () => rootRoute, path: "/confirm", component: ConfirmRoute });
 const ordersRoute = createRoute({ getParentRoute: () => rootRoute, path: "/orders", component: OrdersRoute });
 const contactRoute = createRoute({ getParentRoute: () => rootRoute, path: "/contact", component: ContactRoute });
+
+// Extended routes rendered inside existing files
+import { ShopRoute, ShopItemRoute } from "./routes/InventoryRoute";
+import { AccountRoute, BookingsRoute, LoginRoute } from "./routes/OrdersRoute";
+import { AdminLayout, AdminDashboardRoute, AdminOrdersRoute, AdminVideoBookingsRoute, AdminInventoryRoute, AdminProductsRoute, AdminCustomersRoute, AdminProfitRoute, AdminScoopBookingsRoute, AdminReportsRoute, AdminScoopManagementRoute, AdminDeliveryRoute, AdminPaymentsRoute } from "./routes/ConfirmRoute";
+
 const shopRoute = createRoute({ getParentRoute: () => rootRoute, path: "/shop", component: ShopRoute });
 const shopItemRoute = createRoute({ getParentRoute: () => rootRoute, path: "/shop/$itemId", component: ShopItemRoute });
 const accountRoute = createRoute({ getParentRoute: () => rootRoute, path: "/account", component: AccountRoute });
 const bookingsRoute = createRoute({ getParentRoute: () => rootRoute, path: "/bookings", component: BookingsRoute });
 const loginRoute = createRoute({ getParentRoute: () => rootRoute, path: "/login", component: LoginRoute });
-const howItWorksRoute = createRoute({ getParentRoute: () => rootRoute, path: "/how-it-works", component: HowItWorksRoute });
 
-// Admin routes
 const adminLayout = createRoute({ getParentRoute: () => rootRoute, path: "/admin", component: AdminLayout });
 const adminIndexRoute = createRoute({ getParentRoute: () => adminLayout, path: "/", component: AdminDashboardRoute });
 const adminOrdersRoute = createRoute({ getParentRoute: () => adminLayout, path: "/orders", component: AdminOrdersRoute });
@@ -76,7 +60,6 @@ const routeTree = rootRoute.addChildren([
   accountRoute,
   bookingsRoute,
   loginRoute,
-  howItWorksRoute,
   adminLayout.addChildren([
     adminIndexRoute,
     adminOrdersRoute,
