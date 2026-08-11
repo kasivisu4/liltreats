@@ -1,11 +1,13 @@
 import mongoose from "mongoose";
 
-const uri = process.env.MONGODB_URI;
+// MONGO_URI takes priority — use this when rotating credentials.
+// MONGODB_URI is the fallback (original project-wide variable).
+const uri = process.env.MONGO_URI ?? process.env.MONGODB_URI;
 const dbName = process.env.DB_NAME ?? "liltreats";
 
 if (!uri) {
   throw new Error(
-    "MONGODB_URI is not set. Add it to your backend environment variables — never to frontend code.",
+    "No MongoDB URI found. Set MONGO_URI in environment variables — never in frontend code.",
   );
 }
 
