@@ -6,13 +6,13 @@
   "description": "liltreats — handcrafted mystery scoop booking app (web + mobile PWA)",
   "scripts": {
     "dev": "vite",
-    "dev:server": "node --loader ts-node/esm server/index.ts",
+    "dev:server": "tsx server/index.ts",
     "dev:all": "concurrently \"npm run dev:server\" \"npm run dev\"",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "lint": "tsc --noEmit",
-    "start:server": "node dist-server/index.js",
-    "build:server": "tsc -p tsconfig.server.json"
+    "seed": "tsx server/seed.ts",
+    "start:server": "tsx server/index.ts"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.59.16",
