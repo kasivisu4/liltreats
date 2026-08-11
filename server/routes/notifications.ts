@@ -18,20 +18,8 @@ router.get("/", requireAuth, async (req, res) => {
   }
 });
 
-// PATCH /api/notifications/:id/read  — mark as read
-router.patch("/:id/read", requireAuth, async (req, res) => {
-  try {
-    await Notification.findOneAndUpdate(
-      { _id: req.params.id, userId: req.user!.userId },
-      { $set: { isRead: true } },
-    );
-    res.json({ message: "Marked as read." });
-  } catch (err) {
-    res.status(500).json({ error: "Could not mark notification." });
-  }
-});
-
 // PATCH /api/notifications/read-all  — mark all as read
+// NOTE: must be registered BEFORE /:id/read so Express doesn't treat "read-all" as an ID
 router.patch("/read-all", requireAuth, async (req, res) => {
   try {
     await Notification.updateMany(
