@@ -794,6 +794,45 @@ function lilTreatsApiPlugin(): Plugin {
           } catch (err: any) { res.status(500).json({ error: err.message }); }
         });
 
+        // ── Seed default users on connect ────────────────────────────────────
+        mongoose.connection.once("open", async () => {
+          try {
+            // Customer user
+            const customerEmail = "customer@liltreats.com";
+            const existingCustomer = await User.findOne({ email: customerEmail });
+            if (!existingCustomer) {
+              const hash = await bcrypt.hash("Customer@123", 12);
+              await User.create({
+                name: "Priya Sharma",
+                email: customerEmail,
+                phone: "+91 98765 43210",
+                passwordHash: hash,
+                role: "customer",
+                status: "active",
+              });
+              console.log("[seed] Customer user created: customer@liltreats.com / Customer@123");
+            }
+
+            // Admin user
+            const adminEmail = "admin@liltreats.com";
+            const existingAdmin = await User.findOne({ email: adminEmail });
+            if (!existingAdmin) {
+              const hash = await bcrypt.hash("Admin@123", 12);
+              await User.create({
+                name: "LilTreats Admin",
+                email: adminEmail,
+                phone: "+91 99999 00000",
+                passwordHash: hash,
+                role: "admin",
+                status: "active",
+              });
+              console.log("[seed] Admin user created: admin@liltreats.com / Admin@123");
+            }
+          } catch (err: any) {
+            console.error("[seed] User seed error:", err.message);
+          }
+        });
+
         // ── Mount on Vite dev server ─────────────────────────────────────────
         server.middlewares.use(app);
         console.log(`[api] LilTreats API mounted on Vite dev server (handles /api/* routes)`);
