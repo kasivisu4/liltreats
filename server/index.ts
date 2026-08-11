@@ -62,15 +62,24 @@ app.use((err: Error, _req: express.Request, res: express.Response, _next: expres
 
 // ── Start ─────────────────────────────────────────────────────────────────────
 async function start() {
-  await connectDB();
+  // Start the HTTP server first so the frontend is always reachable,
+  // then attempt MongoDB connection. If Atlas rejects (IP not whitelisted)
+  // the server stays up and API routes return 503 instead of crashing.
   app.listen(PORT, () => {
     console.log(`[api] LilTreats API running on port ${PORT}`);
   });
+
+  try {
+    await connectDB();
+  } catch (err) {
+    // connectDB already logs and handles retries — this is a final fallback.
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[api] MongoDB unavailable — API routes requiring DB will return 503.", message);
+  }
 }
 
 start().catch((err) => {
-  console.error("[fatal] Could not start server:", err);
-  process.exit(1);
+  console.error("[fatal] Unexpected error during startup:", err);
 });
 
 export default app;
