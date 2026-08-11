@@ -13,7 +13,7 @@ export interface IProduct extends Document {
   minimumStock: number;
   isActive: boolean;
   isFeatured: boolean;
-  isNew: boolean;
+  isNewArrival: boolean;
   isLimited: boolean;
   createdAt: Date;
   updatedAt: Date;
