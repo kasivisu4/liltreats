@@ -1,9 +1,8 @@
 /**
  * realApi.ts — Real API calls to the MongoDB backend.
  *
- * These functions replace their counterparts in mockApi.ts.
- * Import from here for any function that has been wired to the backend.
- * The rest of the app continues to import from mockApi.ts during the migration.
+ * All frontend data fetching goes through here.
+ * The mock API is kept for reference but is no longer called by queries.ts.
  */
 
 import { api } from "./client";
@@ -19,7 +18,7 @@ import type {
 } from "./mockApi";
 import type { TierId } from "../data/tiers";
 
-// ── Types returned by real backend ───────────────────────────────────────────
+// ── Backend shapes ────────────────────────────────────────────────────────────
 
 interface BackendOrder {
   _id: string;
@@ -88,7 +87,7 @@ interface BackendProduct {
   isActive: boolean;
   isFeatured: boolean;
   isNew: boolean;
-  categoryId: string;
+  categoryId: string | { _id: string; name: string };
 }
 
 interface BackendInventory {
@@ -114,31 +113,56 @@ interface BackendMovement {
   createdAt: string;
 }
 
+interface BackendScoopBooking {
+  _id: string;
+  bookingId?: string;
+  orderId: string | { orderNumber?: string };
+  userId: string;
+  tier: TierId;
+  scoopName: string;
+  experience: "with_video" | "without_video";
+  videoBookingId: string | null;
+  status: string;
+  createdAt: string;
+}
+
+interface BackendCustomer {
+  _id: string;
+  name: string;
+  phone: string;
+  email: string;
+  instagram?: string;
+  totalOrders?: number;
+  totalSpend?: number;
+  lastOrderAt?: string | null;
+  createdAt: string;
+}
+
 // ── Mapping helpers ───────────────────────────────────────────────────────────
 
 function mapOrder(o: BackendOrder): Order {
-  // Determine scoop tier from items
-  const scoopItem = o.items.find((i) => i.scoopConfigId);
-  const indivItems = o.items.filter((i) => i.productId && !i.scoopConfigId);
+  const scoopItem = o.items?.find((i) => i.scoopConfigId);
+  const indivItems = o.items?.filter((i) => i.productId && !i.scoopConfigId) ?? [];
 
   return {
-    id: o.orderNumber,
+    id: o.orderNumber ?? o._id,
+    _id: o._id,
     customerId: o.userId,
     customerName: o.customerName ?? "",
     customerPhone: o.customerPhone ?? "",
     customerEmail: o.customerEmail ?? "",
     customerInstagram: o.customerInstagram ?? "",
-    tierId: null, // populated separately if needed
+    tierId: null,
     tierName: scoopItem?.name ?? (indivItems.length > 0 ? "Individual Items" : ""),
     icon: "✦",
     price: o.subtotal,
-    videoAddon: false, // enriched by booking query if needed
+    videoAddon: false,
     videoDate: null,
     videoTime: null,
     videoSlotId: null,
     shipping: o.shippingCost,
     total: o.totalAmount,
-    itemsPreview: o.items.slice(0, 3).map((i) => i.name),
+    itemsPreview: (o.items ?? []).slice(0, 3).map((i) => i.name),
     status: o.orderStatus as Order["status"],
     paymentStatus: o.paymentStatus as Order["paymentStatus"],
     placedAt: o.createdAt,
@@ -165,17 +189,20 @@ function mapSlot(s: BackendVideoSlot): VideoSlot {
     date: s.date,
     time: s.startTime,
     maxCapacity: s.maxCapacity,
-    bookedCount: s.bookedCount + s.reservedCount,
+    bookedCount: s.bookedCount + (s.reservedCount ?? 0),
     isBlocked: s.status === "blocked",
   };
 }
 
-function mapProduct(inv: BackendInventory): IndividualItem {
+function mapInventory(inv: BackendInventory): IndividualItem {
   const p = inv.productId;
+  const catName = typeof p.categoryId === "object" && p.categoryId
+    ? (p.categoryId as { name: string }).name
+    : String(p.categoryId ?? "");
   return {
     id: p._id,
     name: p.name,
-    category: p.categoryId ?? "Accessories",
+    category: catName || "Accessories",
     emoji: "✦",
     description: p.description ?? "",
     sellingPrice: p.sellingPrice,
@@ -209,129 +236,10 @@ function mapMovement(m: BackendMovement): InventoryMovement {
   };
 }
 
-// ── Phase D — Orders ──────────────────────────────────────────────────────────
-
-export async function fetchOrdersReal(): Promise<Order[]> {
-  const res = await api.get<{ orders: BackendOrder[] }>("/orders");
-  return res.orders.map(mapOrder);
-}
-
-export async function fetchAllOrdersReal(): Promise<Order[]> {
-  const res = await api.get<{ orders: BackendOrder[] }>("/orders/admin/all");
-  return res.orders.map(mapOrder);
-}
-
-export async function createOrderReal(input: CreateOrderInput & {
-  street?: string; city?: string; state?: string; email?: string;
-}): Promise<Order> {
-  const payload = {
-    items: [],
-    scoopBookingData: {
-      tier: input.tierId,
-      scoopName: input.tierId,
-      experience: input.videoAddon ? "with_video" : "without_video",
-      preferences: { vibe: [], favouriteCategories: [], avoidNote: "" },
-    },
-    subtotal: 0,
-    shippingCost: input.shipping,
-    discount: 0,
-    totalAmount: 0,
-    shippingAddress: {
-      name: input.name,
-      phone: input.phone,
-      email: input.email ?? "",
-      house: input.building,
-      street: input.street ?? "",
-      area: input.area,
-      city: input.city ?? "Hyderabad",
-      state: input.state ?? "Telangana",
-      pincode: input.pin,
-    },
-    customerName: input.name,
-    customerPhone: input.phone,
-    customerEmail: input.email ?? "",
-    customerInstagram: input.instagram,
-    note: input.note,
-    paymentMethod: input.paymentMethod,
-  };
-
-  const res = await api.post<{ order: BackendOrder }>("/orders", payload);
-  return mapOrder(res.order);
-}
-
-export async function updateOrderStatusReal(orderId: string, status: string): Promise<void> {
-  // orderId here is the orderNumber (LT-2026-XXXXX); we need the _id
-  // The admin order list includes _id — for now patch by orderNumber via admin route
-  await api.patch(`/orders/${orderId}/status`, { status });
-}
-
-// ── Phase C — Video Slots ─────────────────────────────────────────────────────
-
-export async function fetchVideoSlotsReal(fromDate: string, toDate: string): Promise<VideoSlot[]> {
-  const res = await api.get<{ slots: BackendVideoSlot[] }>(
-    `/video/slots?from=${fromDate}&to=${toDate}`,
-  );
-  return res.slots.map(mapSlot);
-}
-
-export async function reserveVideoSlotReal(slotId: string): Promise<{ reservationId: string; expiresAt: string }> {
-  const res = await api.post<{ reservationId: string; expiresAt: string }>(
-    "/video/reserve",
-    { slotId },
-  );
-  return res;
-}
-
-export async function releaseVideoSlotReal(reservationId: string): Promise<void> {
-  await api.post(`/video/release/${reservationId}`, {});
-}
-
-// ── Phase B — Products ────────────────────────────────────────────────────────
-
-export async function fetchIndividualItemsReal(): Promise<IndividualItem[]> {
-  const res = await api.get<{ items: BackendInventory[] }>("/inventory");
-  return res.items.filter((i) => i.productId?.isActive).map(mapProduct);
-}
-
-export async function fetchAllInventoryItemsReal(): Promise<IndividualItem[]> {
-  const res = await api.get<{ items: BackendInventory[] }>("/inventory");
-  return res.items.map(mapProduct);
-}
-
-// ── Inventory movements ───────────────────────────────────────────────────────
-
-export async function fetchInventoryMovementsReal(productId?: string): Promise<InventoryMovement[]> {
-  const path = productId
-    ? `/inventory/movements/${productId}`
-    : "/inventory/movements";
-  const res = await api.get<{ movements: BackendMovement[] }>(path);
-  return res.movements.map(mapMovement);
-}
-
-// ── Dashboard ─────────────────────────────────────────────────────────────────
-
-export async function fetchDashboardStatsReal(): Promise<DashboardStats> {
-  const res = await api.get<DashboardStats>("/admin/dashboard");
-  return res;
-}
-
-// ── Scoop Bookings ────────────────────────────────────────────────────────────
-
-interface BackendScoopBooking {
-  _id: string;
-  bookingId?: string;
-  orderId: string | { orderNumber?: string };
-  userId: string;
-  tier: TierId;
-  scoopName: string;
-  experience: "with_video" | "without_video";
-  videoBookingId: string | null;
-  status: string;
-  createdAt: string;
-}
-
 function mapScoopBooking(b: BackendScoopBooking): ScoopBooking {
-  const orderId = typeof b.orderId === "object" ? (b.orderId.orderNumber ?? "") : String(b.orderId ?? "");
+  const orderId = typeof b.orderId === "object"
+    ? (b.orderId.orderNumber ?? String(b.orderId))
+    : String(b.orderId ?? "");
   return {
     id: b.bookingId ?? b._id,
     orderId,
@@ -346,6 +254,263 @@ function mapScoopBooking(b: BackendScoopBooking): ScoopBooking {
   };
 }
 
+function mapCustomer(c: BackendCustomer): Customer {
+  return {
+    id: c._id,
+    name: c.name ?? "",
+    phone: c.phone ?? "",
+    email: c.email ?? "",
+    instagram: c.instagram ?? "",
+    totalOrders: c.totalOrders ?? 0,
+    totalSpend: c.totalSpend ?? 0,
+    lastOrderAt: c.lastOrderAt ?? null,
+    joinedAt: c.createdAt,
+    addresses: [],
+  };
+}
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+
+export async function fetchCurrentUser() {
+  return api.get<{ user: BackendCustomer }>("/auth/me");
+}
+
+// ── Orders ────────────────────────────────────────────────────────────────────
+
+export async function fetchOrdersReal(): Promise<Order[]> {
+  const res = await api.get<{ orders: BackendOrder[] }>("/orders");
+  return res.orders.map(mapOrder);
+}
+
+export async function fetchAllOrdersReal(): Promise<Order[]> {
+  const res = await api.get<{ orders: BackendOrder[] }>("/orders/admin/all");
+  return res.orders.map(mapOrder);
+}
+
+export async function createOrderReal(
+  input: CreateOrderInput & {
+    street?: string; city?: string; state?: string; email?: string;
+    itemCostTotal?: number; netProfit?: number; packagingCost?: number;
+    paymentGatewayFee?: number; discount?: number;
+    scoopConfigId?: string;
+  },
+): Promise<Order> {
+  const subtotal = (input as { price?: number }).price ?? 0;
+  const shippingCost = input.shipping ?? 0;
+  const discount = input.discount ?? 0;
+  const packagingCost = input.packagingCost ?? 25;
+  const paymentGatewayFee = input.paymentGatewayFee ?? Math.round(subtotal * 0.02);
+  const itemCostTotal = input.itemCostTotal ?? 0;
+  const totalAmount = subtotal + shippingCost - discount;
+  const netProfit = totalAmount - itemCostTotal - packagingCost - shippingCost - paymentGatewayFee - discount;
+
+  const payload = {
+    items: input.scoopConfigId
+      ? [{ scoopConfigId: input.scoopConfigId, name: input.tierId ?? "", quantity: 1, sellingPrice: subtotal, costPrice: itemCostTotal, subtotal, sku: input.tierId ?? "" }]
+      : [],
+    scoopBookingData: input.tierId ? {
+      tier: input.tierId,
+      scoopName: input.tierId,
+      experience: input.videoAddon ? "with_video" : "without_video",
+      preferences: { vibe: [], favouriteCategories: [], avoidNote: "" },
+    } : undefined,
+    reservationId: (input as { reservationId?: string }).reservationId,
+    subtotal,
+    shippingCost,
+    discount,
+    packagingCost,
+    paymentGatewayFee,
+    totalAmount,
+    itemCostTotal,
+    netProfit,
+    shippingAddress: {
+      name: input.name,
+      phone: input.phone,
+      email: input.email ?? "",
+      house: input.building,
+      street: input.street ?? "",
+      area: input.area,
+      city: input.city ?? "Hyderabad",
+      state: input.state ?? "Telangana",
+      pincode: input.pin,
+    },
+    customerName: input.name,
+    customerPhone: input.phone,
+    customerEmail: input.email ?? "",
+    customerInstagram: input.instagram ?? "",
+    note: input.note ?? "",
+    paymentMethod: input.paymentMethod ?? "upi",
+  };
+
+  const res = await api.post<{ order: BackendOrder }>("/orders", payload);
+  return mapOrder(res.order);
+}
+
+export async function updateOrderStatusReal(orderId: string, status: string): Promise<void> {
+  await api.patch(`/orders/${orderId}/status`, { status });
+}
+
+export async function updateDeliveryReal(
+  orderId: string,
+  courier: string,
+  trackingNumber: string,
+  trackingUrl: string,
+): Promise<void> {
+  await api.patch(`/orders/${orderId}/delivery`, { courier, trackingNumber, trackingUrl });
+}
+
+export async function cancelOrderReal(orderId: string, reason: string): Promise<void> {
+  await api.post(`/orders/${orderId}/cancel`, { reason });
+}
+
+// ── Video Slots ───────────────────────────────────────────────────────────────
+
+export async function fetchVideoSlotsReal(fromDate: string, toDate: string): Promise<VideoSlot[]> {
+  const res = await api.get<{ slots: BackendVideoSlot[] }>(
+    `/video/slots?from=${fromDate}&to=${toDate}`,
+  );
+  return res.slots.map(mapSlot);
+}
+
+export async function blockVideoSlotReal(slotId: string, blocked: boolean): Promise<void> {
+  await api.patch(`/video/slots/${slotId}`, { status: blocked ? "blocked" : "available" });
+}
+
+export async function addVideoSlotReal(date: string, startTime: string, endTime?: string): Promise<VideoSlot> {
+  const res = await api.post<{ slot: BackendVideoSlot }>("/video/slots", {
+    date,
+    startTime,
+    endTime: endTime ?? "",
+    maxCapacity: 1,
+  });
+  return mapSlot(res.slot);
+}
+
+export async function deleteVideoSlotReal(slotId: string): Promise<void> {
+  await api.del(`/video/slots/${slotId}`);
+}
+
+export async function reserveVideoSlotReal(slotId: string): Promise<{ reservationId: string; expiresAt: string }> {
+  const res = await api.post<{ reservationId: string; expiresAt: string }>(
+    "/video/reserve",
+    { slotId },
+  );
+  return res;
+}
+
+export async function releaseVideoSlotReal(reservationId: string): Promise<void> {
+  await api.post(`/video/release/${reservationId}`, {});
+}
+
+export async function fetchVideoAvailabilityReal(fromDate: string, toDate: string) {
+  return api.get<{
+    availability: Array<{ date: string; booked: number; capacity: number; available: number; fullyBooked: boolean }>;
+    maxBookingsPerDay: number;
+  }>(`/video/availability?from=${fromDate}&to=${toDate}`);
+}
+
+export async function fetchVideoConfigReal() {
+  return api.get<{
+    config: {
+      minimumLeadDays: number;
+      bookingWindowDays: number;
+      maxBookingsPerDay: number;
+      reservationTimeoutMinutes: number;
+    };
+  }>("/video/config");
+}
+
+// ── Products / Inventory ──────────────────────────────────────────────────────
+
+export async function fetchIndividualItemsReal(): Promise<IndividualItem[]> {
+  const res = await api.get<{ items: BackendInventory[] }>("/inventory");
+  return res.items.filter((i) => i.productId?.isActive).map(mapInventory);
+}
+
+export async function fetchAllInventoryItemsReal(): Promise<IndividualItem[]> {
+  const res = await api.get<{ items: BackendInventory[] }>("/inventory");
+  return res.items.map(mapInventory);
+}
+
+export async function fetchInventoryMovementsReal(productId?: string): Promise<InventoryMovement[]> {
+  const path = productId
+    ? `/inventory/movements/${productId}`
+    : "/inventory/movements";
+  const res = await api.get<{ movements: BackendMovement[] }>(path);
+  return res.movements.map(mapMovement);
+}
+
+export async function addStockReal(
+  itemId: string,
+  qty: number,
+  costPrice: number,
+  note: string,
+): Promise<void> {
+  await api.post("/inventory/add-stock", { productId: itemId, quantity: qty, costPrice, note });
+}
+
+export async function manualDebitStockReal(
+  itemId: string,
+  qty: number,
+  reason: string,
+): Promise<void> {
+  await api.post("/inventory/manual-debit", { productId: itemId, quantity: qty, reason });
+}
+
+export async function adjustStockReal(
+  itemId: string,
+  newQty: number,
+  reason: string,
+): Promise<void> {
+  await api.post("/inventory/adjust", { productId: itemId, newQuantity: newQty, reason });
+}
+
+export async function saveProductReal(product: {
+  id?: string;
+  name: string;
+  sku: string;
+  category: string;
+  costPrice: number;
+  sellingPrice: number;
+  stock: number;
+  minStock: number;
+  description: string;
+  isActive: boolean;
+  isFeatured: boolean;
+  isNew: boolean;
+}): Promise<void> {
+  const payload = {
+    name: product.name,
+    sku: product.sku,
+    costPrice: product.costPrice,
+    sellingPrice: product.sellingPrice,
+    currentStock: product.stock,
+    minimumStock: product.minStock,
+    description: product.description,
+    isActive: product.isActive,
+    isFeatured: product.isFeatured,
+    isNew: product.isNew,
+  };
+
+  if (product.id) {
+    await api.patch(`/products/${product.id}`, payload);
+  } else {
+    await api.post("/products", {
+      ...payload,
+      slug: product.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+    });
+  }
+}
+
+// ── Dashboard ─────────────────────────────────────────────────────────────────
+
+export async function fetchDashboardStatsReal(): Promise<DashboardStats> {
+  const res = await api.get<DashboardStats>("/admin/dashboard");
+  return res;
+}
+
+// ── Scoop Bookings ────────────────────────────────────────────────────────────
+
 export async function fetchScoopBookingsReal(): Promise<ScoopBooking[]> {
   const res = await api.get<{ bookings: BackendScoopBooking[] }>("/bookings");
   return res.bookings.map(mapScoopBooking);
@@ -358,31 +523,41 @@ export async function fetchAllScoopBookingsReal(): Promise<ScoopBooking[]> {
 
 // ── Customers (admin) ─────────────────────────────────────────────────────────
 
-interface BackendCustomer {
-  _id: string;
-  name: string;
-  phone: string;
-  email: string;
-  instagram?: string;
-  createdAt: string;
-}
-
-function mapCustomer(c: BackendCustomer): Customer {
-  return {
-    id: c._id,
-    name: c.name ?? "",
-    phone: c.phone ?? "",
-    email: c.email ?? "",
-    instagram: c.instagram ?? "",
-    totalOrders: 0,
-    totalSpend: 0,
-    lastOrderAt: null,
-    joinedAt: c.createdAt,
-    addresses: [],
-  };
-}
-
 export async function fetchCustomersReal(): Promise<Customer[]> {
   const res = await api.get<{ customers: BackendCustomer[] }>("/admin/customers");
   return res.customers.map(mapCustomer);
+}
+
+// ── Scoop configs (public) ────────────────────────────────────────────────────
+
+export async function fetchScoopConfigsReal() {
+  return api.get<{
+    scoops: Array<{
+      _id: string; tier: string; name: string; price: number;
+      itemRange: string; description: string; isActive: boolean;
+    }>;
+  }>("/scoops");
+}
+
+// ── Categories (public) ───────────────────────────────────────────────────────
+
+export async function fetchCategoriesReal() {
+  return api.get<{
+    categories: Array<{ _id: string; name: string; slug: string }>;
+  }>("/categories");
+}
+
+// ── Notifications ─────────────────────────────────────────────────────────────
+
+export async function fetchNotificationsReal() {
+  return api.get<{
+    notifications: Array<{
+      _id: string; type: string; title: string; message: string;
+      isRead: boolean; createdAt: string;
+    }>;
+  }>("/notifications");
+}
+
+export async function markNotificationReadReal(notificationId: string) {
+  return api.patch(`/notifications/${notificationId}/read`, {});
 }
