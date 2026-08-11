@@ -86,7 +86,8 @@ function ItemRow({ item }: { item: ScoopItem }) {
 }
 
 export function InventoryRoute() {
-  const { data, isLoading } = useInventory();
+  const data: ScoopItem[] = SCOOP_ITEMS;
+  const isLoading = false;
   const [tab, setTab] = useState<Tab>("all");
   const [badge, setBadge] = useState<Badge>("all");
   const parentRef = useRef<HTMLDivElement>(null);
