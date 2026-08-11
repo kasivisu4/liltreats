@@ -3,11 +3,34 @@ import { useNavigate } from "@tanstack/react-router";
 import { QrCode, CreditCard, Wallet, CircleX, Video, Trash2 } from "lucide-react";
 import { Screen } from "../components/Screen";
 import { TopBar } from "../components/TopBar";
-import { StepIndicator } from "../components/StepIndicator";
 import { TIER_BY_ID, VIDEO_ADDON_PRICE } from "../data/tiers";
 import { SHIPPING_FLAT, useCartStore } from "../store/cartStore";
 import { useCreateOrder } from "../api/queries";
 import type { ContactDetails } from "../store/cartStore";
+
+// Inline StepIndicator — avoids import from a file not in the build snapshot
+function StepIndicator({ current }: { current: number }) {
+  const steps = ["Choose scoop", "Preferences", "Checkout"];
+  return (
+    <div className="flex items-center justify-center gap-0 border-b border-line bg-white/60 px-4 py-2.5">
+      {steps.map((label, i) => {
+        const done = i < current;
+        const active = i === current;
+        return (
+          <div key={label} className="flex items-center">
+            <div className="flex flex-col items-center">
+              <div className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold ${done ? "bg-sage-DEFAULT text-white" : active ? "bg-deep text-white" : "bg-line text-ink-mute"}`}>
+                {done ? "✓" : i + 1}
+              </div>
+              <span className={`mt-0.5 text-[9px] font-bold ${active ? "text-deep" : "text-ink-mute"}`}>{label}</span>
+            </div>
+            {i < steps.length - 1 && <div className={`mx-1.5 mb-3 h-[2px] w-8 rounded-full ${done ? "bg-sage-DEFAULT" : "bg-line"}`} />}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 const PAYMENTS = [
   { id: "upi", name: "UPI", sub: "GPay · PhonePe · Paytm", icon: QrCode, bg: "bg-[#EEF0FF]", color: "text-[#3040A0]" },
