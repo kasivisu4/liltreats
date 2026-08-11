@@ -23,7 +23,7 @@ import adminContentRoutes from "./routes/admin/content.js";
 import adminDashboardRoutes from "./routes/admin/dashboard.js";
 
 const app = express();
-const PORT = process.env.API_PORT ?? 4000;
+const PORT = process.env.API_PORT ?? 5001;
 
 // ── Middleware ────────────────────────────────────────────────────────────────
 app.use(cors({ origin: true, credentials: true }));
