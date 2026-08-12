@@ -228,7 +228,8 @@ export function PreferencesRoute() {
   if (!valid) return null;
   const t = TIER_BY_ID(tier as TierId);
 
-  const canProceed = !videoAddon || !!selectedVideoSlotId;
+  const selectedVideoDate = useCartStore((s) => s.selectedVideoDate);
+  const canProceed = !videoAddon || !!selectedVideoDate;
 
   return (
     <Screen top={<TopBar title="Your scoop" showBack />}>
