@@ -230,6 +230,35 @@ export function LoginRoute() {
         <p className="mt-4 text-center text-[11px] font-semibold leading-relaxed text-ink-mute">
           By continuing you agree to liltreats' Terms of Service and Privacy Policy.
         </p>
+
+        {/* Demo credentials — remove before launch */}
+        <div className="mt-5 rounded-xl border border-dashed border-gold/50 bg-gold/5 p-3">
+          <p className="mb-1.5 text-center text-[10px] font-bold uppercase tracking-wider text-gold">
+            Demo accounts
+          </p>
+          <div className="space-y-1.5">
+            {[
+              { label: "Customer", email: "customer@liltreats.com", pass: "Customer@123" },
+              { label: "Admin", email: "admin@liltreats.com", pass: "Admin@123" },
+            ].map(({ label, email, pass }) => (
+              <button
+                key={label}
+                type="button"
+                onClick={() => {
+                  setForm((f) => ({ ...f, email, password: pass }));
+                  setMode("login");
+                }}
+                className="flex w-full items-center justify-between rounded-lg bg-white/60 px-3 py-2 text-left"
+              >
+                <span className="text-[11px] font-bold text-deep">{label}</span>
+                <span className="text-[10px] font-semibold text-ink-mute">{email}</span>
+              </button>
+            ))}
+          </div>
+          <p className="mt-1.5 text-center text-[9px] font-semibold text-ink-mute">
+            Tap a row to auto-fill, then sign in
+          </p>
+        </div>
       </div>
     </Screen>
   );
