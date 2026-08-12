@@ -58,12 +58,14 @@ export function CartRoute() {
 
   const createOrder = useCreateOrder();
 
-  useEffect(() => {
-    if (!selectedTier) navigate({ to: "/" });
-  }, [selectedTier, navigate]);
+  const hasShopItems = shopCart.length > 0;
 
-  if (!selectedTier) return null;
-  const tier = TIER_BY_ID(selectedTier);
+  useEffect(() => {
+    if (!selectedTier && !hasShopItems) navigate({ to: "/" });
+  }, [selectedTier, hasShopItems, navigate]);
+
+  if (!selectedTier && !hasShopItems) return null;
+  const tier = selectedTier ? TIER_BY_ID(selectedTier) : null;
 
   const shopTotal = shopCart.reduce((s, i) => s + i.price * i.quantity, 0);
   const videoPrice = videoAddon ? VIDEO_ADDON_PRICE : 0;
