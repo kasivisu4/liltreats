@@ -1,15 +1,38 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
+import { useState } from "react";
 import { Screen } from "../components/Screen";
 import { TopBar } from "../components/TopBar";
 import { TIERS, TIER_BY_ID, VIDEO_ADDON_PRICE, type TierId } from "../data/tiers";
-import { FAV_CATEGORIES, VIBES, useCartStore } from "../store/cartStore";
+import { useCartStore } from "../store/cartStore";
 import { useVideoSlots } from "../api/queries";
 
 const VALID = new Set(TIERS.map((t) => t.id));
 
-// ── Inline StepIndicator ───────────────────────────────────────────────────────
+// ── Board images ───────────────────────────────────────────────────────────────
+// Two curated mood-board illustrations the customer picks between.
+// Using public Unsplash photos that fit the aesthetic — warm, jewellery / trinkets.
+const BOARDS = [
+  {
+    id: 1 as const,
+    label: "Board A",
+    subtitle: "Warm & golden",
+    emoji: "✨",
+    // Warm flat-lay of gold jewellery & accessories
+    src: "https://images.unsplash.com/photo-1596944924616-7b38e7cfac36?w=400&q=80",
+  },
+  {
+    id: 2 as const,
+    label: "Board B",
+    subtitle: "Soft & minimal",
+    emoji: "🌸",
+    // Soft pink minimal accessories flat-lay
+    src: "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=400&q=80",
+  },
+];
+
+// ── StepIndicator ──────────────────────────────────────────────────────────────
 function StepIndicator({ current }: { current: number }) {
   const steps = ["Choose scoop", "Preferences", "Checkout"];
   return (
@@ -49,7 +72,7 @@ function StepIndicator({ current }: { current: number }) {
   );
 }
 
-// ── Inline VideoSlotPicker ─────────────────────────────────────────────────────
+// ── VideoSlotPicker ────────────────────────────────────────────────────────────
 function VideoSlotPicker() {
   const setVideoSlot = useCartStore((s) => s.setVideoSlot);
   const selectedDate = useCartStore((s) => s.selectedVideoDate);
@@ -65,24 +88,25 @@ function VideoSlotPicker() {
 
   const { data: slots = [] } = useVideoSlots(fromStr, toStr);
 
-  // Build available dates — deduplicate and check capacity
   const byDate: Record<string, typeof slots> = {};
   slots.forEach((s) => {
     if (!byDate[s.date]) byDate[s.date] = [];
     byDate[s.date].push(s);
   });
 
-  // If no slots from API, generate the next 30 available dates as fallback
   const apiDates = Object.keys(byDate).sort();
-  const dates = apiDates.length > 0 ? apiDates : (() => {
-    const result: string[] = [];
-    const d = new Date(minDate);
-    while (result.length < 30) {
-      result.push(d.toISOString().split("T")[0]);
-      d.setDate(d.getDate() + 1);
-    }
-    return result;
-  })();
+  const dates =
+    apiDates.length > 0
+      ? apiDates
+      : (() => {
+          const result: string[] = [];
+          const d = new Date(minDate);
+          while (result.length < 30) {
+            result.push(d.toISOString().split("T")[0]);
+            d.setDate(d.getDate() + 1);
+          }
+          return result;
+        })();
 
   const [weekStart, setWeekStart] = useState(0);
   const DAYS_PER_PAGE = 7;
@@ -94,7 +118,11 @@ function VideoSlotPicker() {
       day: d.toLocaleDateString("en-IN", { weekday: "short" }),
       num: d.toLocaleDateString("en-IN", { day: "numeric" }),
       month: d.toLocaleDateString("en-IN", { month: "short" }),
-      full: d.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }),
+      full: d.toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      }),
     };
   }
 
@@ -107,9 +135,10 @@ function VideoSlotPicker() {
   }
 
   function selectDate(dateStr: string) {
-    // Use first available slot id for that date, or a synthetic id
     const daySlots = byDate[dateStr];
-    const slot = daySlots?.find((s) => !s.isBlocked && s.bookedCount < s.maxCapacity);
+    const slot = daySlots?.find(
+      (s) => !s.isBlocked && s.bookedCount < s.maxCapacity,
+    );
     setVideoSlot(slot?.id ?? dateStr, dateStr, slot?.time ?? "");
   }
 
@@ -117,18 +146,18 @@ function VideoSlotPicker() {
     <div className="rounded-2xl border border-gold-light bg-white/70 p-4">
       <div className="mb-3 flex items-center gap-2">
         <Calendar size={15} className="text-gold-DEFAULT" />
-        <span className="font-serif text-[14px] font-bold text-deep">Pick your video date</span>
+        <span className="font-serif text-[14px] font-bold text-deep">
+          Pick your video date
+        </span>
       </div>
-
       <p className="mb-4 text-[11px] font-semibold leading-relaxed text-ink-soft">
-        Earliest available:{" "}
+        Earliest:{" "}
         <span className="font-bold text-deep">
           {minDate.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
         </span>
         . We'll confirm your exact time 24 hrs before.
       </p>
 
-      {/* Week nav */}
       <div className="mb-2 flex items-center justify-between">
         <button
           onClick={() => setWeekStart(Math.max(0, weekStart - DAYS_PER_PAGE))}
@@ -138,7 +167,9 @@ function VideoSlotPicker() {
           <ChevronLeft size={14} />
         </button>
         <span className="text-[11px] font-bold text-ink-mute">
-          {visibleDates[0] ? `${fmtDate(visibleDates[0]).num} ${fmtDate(visibleDates[0]).month}` : ""}{" "}
+          {visibleDates[0]
+            ? `${fmtDate(visibleDates[0]).num} ${fmtDate(visibleDates[0]).month}`
+            : ""}{" "}
           —{" "}
           {visibleDates[visibleDates.length - 1]
             ? `${fmtDate(visibleDates[visibleDates.length - 1]).num} ${fmtDate(visibleDates[visibleDates.length - 1]).month}`
@@ -146,7 +177,9 @@ function VideoSlotPicker() {
         </span>
         <button
           onClick={() =>
-            setWeekStart(Math.min(dates.length - DAYS_PER_PAGE, weekStart + DAYS_PER_PAGE))
+            setWeekStart(
+              Math.min(dates.length - DAYS_PER_PAGE, weekStart + DAYS_PER_PAGE),
+            )
           }
           disabled={weekStart + DAYS_PER_PAGE >= dates.length}
           className="flex h-7 w-7 items-center justify-center rounded-full border border-line bg-white/70 disabled:opacity-30"
@@ -155,7 +188,6 @@ function VideoSlotPicker() {
         </button>
       </div>
 
-      {/* Date grid */}
       <div className="grid grid-cols-7 gap-1">
         {visibleDates.map((dateStr) => {
           const full = isDayFull(dateStr);
@@ -174,21 +206,35 @@ function VideoSlotPicker() {
                     : "border-line bg-white/60 hover:border-gold-DEFAULT"
               }`}
             >
-              <span className="text-[9px] font-bold uppercase tracking-wide text-ink-mute">{day}</span>
-              <span className={`text-[12px] font-bold ${selected ? "text-rose" : "text-deep"}`}>{num}</span>
+              <span className="text-[9px] font-bold uppercase tracking-wide text-ink-mute">
+                {day}
+              </span>
+              <span
+                className={`text-[12px] font-bold ${selected ? "text-rose" : "text-deep"}`}
+              >
+                {num}
+              </span>
               <span className="text-[8px] font-semibold text-ink-mute">{month}</span>
-              {full && <span className="mt-0.5 text-[7px] font-bold text-rose">Full</span>}
-              {selected && <span className="mt-0.5 text-[7px] font-bold text-rose">✓</span>}
+              {full && (
+                <span className="mt-0.5 text-[7px] font-bold text-rose">Full</span>
+              )}
+              {selected && (
+                <span className="mt-0.5 text-[7px] font-bold text-rose">✓</span>
+              )}
             </button>
           );
         })}
       </div>
 
-      {/* Confirmed banner */}
       {selectedDate && (
         <div className="mt-4 rounded-xl border border-sage-DEFAULT/30 bg-[#EAF4EA] px-3 py-2.5 text-center">
           <span className="text-[12px] font-bold text-sage-DEFAULT">
-            ✓ Date confirmed — {fmtDate(selectedDate).full}
+            ✓ Date confirmed —{" "}
+            {new Date(selectedDate + "T00:00:00").toLocaleDateString("en-IN", {
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+            })}
           </span>
           <p className="mt-0.5 text-[10px] font-semibold text-sage-DEFAULT/70">
             We'll WhatsApp you the exact time 24 hrs before your unboxing.
@@ -205,15 +251,13 @@ export function PreferencesRoute() {
   const { tier } = useParams({ strict: false }) as { tier?: string };
 
   const setTier = useCartStore((s) => s.setTier);
-  const vibes = useCartStore((s) => s.vibes);
-  const favCategories = useCartStore((s) => s.favCategories);
   const avoidNote = useCartStore((s) => s.avoidNote);
-  const toggleVibe = useCartStore((s) => s.toggleVibe);
-  const toggleCategory = useCartStore((s) => s.toggleCategory);
   const setAvoidNote = useCartStore((s) => s.setAvoidNote);
   const videoAddon = useCartStore((s) => s.videoAddon);
   const setVideoAddon = useCartStore((s) => s.setVideoAddon);
-  const selectedVideoSlotId = useCartStore((s) => s.selectedVideoSlotId);
+  const selectedVideoDate = useCartStore((s) => s.selectedVideoDate);
+  const selectedBoard = useCartStore((s) => s.selectedBoard);
+  const setSelectedBoard = useCartStore((s) => s.setSelectedBoard);
 
   const valid = tier && VALID.has(tier as TierId);
 
@@ -228,8 +272,8 @@ export function PreferencesRoute() {
   if (!valid) return null;
   const t = TIER_BY_ID(tier as TierId);
 
-  const selectedVideoDate = useCartStore((s) => s.selectedVideoDate);
-  const canProceed = !videoAddon || !!selectedVideoDate;
+  const canProceed =
+    selectedBoard !== null && (!videoAddon || !!selectedVideoDate);
 
   return (
     <Screen top={<TopBar title="Your scoop" showBack />}>
@@ -237,7 +281,7 @@ export function PreferencesRoute() {
       <div className="p-4">
 
         {/* Tier summary */}
-        <div className="mb-4 flex items-center gap-3 rounded-2xl bg-gradient-to-br from-[#F2DCE4] to-[#EDE0F4] p-4">
+        <div className="mb-5 flex items-center gap-3 rounded-2xl bg-gradient-to-br from-[#F2DCE4] to-[#EDE0F4] p-4">
           <span className="text-[30px]">{t.icon}</span>
           <div className="flex-1">
             <div className="font-serif text-[17px] font-bold text-deep">{t.name}</div>
@@ -247,64 +291,38 @@ export function PreferencesRoute() {
           </div>
         </div>
 
-        <div className="mb-4 rounded-2xl border border-line bg-white/60 p-3.5">
-          <p className="text-[12px] font-semibold leading-relaxed text-ink-soft">
-            <span className="font-bold text-deep">It's a surprise! ✨</span> We curate
-            every box by hand. Share your vibe below (all optional) and we'll match the
-            goodies to your taste.
-          </p>
+        {/* ── Step 1: Anything to avoid ───────────────────────────────────── */}
+        <div className="mb-1 flex items-center gap-1.5">
+          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-deep text-[10px] font-bold text-white">
+            1
+          </span>
+          <span className="text-[13px] font-bold text-deep">Anything to avoid?</span>
+          <span className="ml-1 rounded-full bg-line px-2 py-0.5 text-[9px] font-bold text-ink-mute">
+            Optional
+          </span>
         </div>
-
-        {/* Vibe */}
-        <div className="section-label">Your vibe</div>
-        <div className="mb-5 flex flex-wrap gap-2">
-          {VIBES.map((v) => {
-            const on = vibes.includes(v);
-            return (
-              <button
-                key={v}
-                onClick={() => toggleVibe(v)}
-                className={`rounded-full border px-3.5 py-2 text-[12px] font-bold transition-colors ${
-                  on ? "border-rose bg-blush text-deep" : "border-line bg-white/60 text-ink-soft"
-                }`}
-              >
-                {v}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Favourite categories */}
-        <div className="section-label">Love these most</div>
-        <div className="mb-5 grid grid-cols-2 gap-2">
-          {FAV_CATEGORIES.map((c) => {
-            const on = favCategories.includes(c);
-            return (
-              <button
-                key={c}
-                onClick={() => toggleCategory(c)}
-                className={`rounded-xl border px-3 py-2.5 text-[12px] font-bold transition-colors ${
-                  on ? "border-gold bg-gold-pale text-deep" : "border-line bg-white/60 text-ink-soft"
-                }`}
-              >
-                {c}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Avoid */}
-        <div className="section-label">Anything to avoid?</div>
-        <input
+        <p className="mb-2 text-[11px] font-semibold text-ink-mute">
+          Allergies, styles you dislike, things you already own too many of — tell us.
+        </p>
+        <textarea
           value={avoidNote}
           onChange={(e) => setAvoidNote(e.target.value)}
-          placeholder="e.g. no danglers, skip strong scents, allergic to…"
-          className="field-input mb-6"
+          placeholder="e.g. no danglers, skip strong scents, allergic to nickel…"
+          rows={3}
+          className="field-input mb-6 resize-none"
         />
 
-        {/* Experience choice */}
-        <div className="section-label">Choose your experience</div>
-        <div className="mb-5 grid grid-cols-2 gap-3">
+        {/* ── Step 2: Video addon ─────────────────────────────────────────── */}
+        <div className="mb-1 flex items-center gap-1.5">
+          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-deep text-[10px] font-bold text-white">
+            2
+          </span>
+          <span className="text-[13px] font-bold text-deep">Choose your experience</span>
+        </div>
+        <p className="mb-3 text-[11px] font-semibold text-ink-mute">
+          Add a professional unboxing video of your scoop — filmed, edited, and yours to keep.
+        </p>
+        <div className="mb-2 grid grid-cols-2 gap-3">
           <button
             onClick={() => setVideoAddon(true)}
             className={`flex flex-col items-center gap-2 rounded-2xl border-[1.5px] p-4 text-center transition-all ${
@@ -349,7 +367,6 @@ export function PreferencesRoute() {
           </button>
         </div>
 
-        {/* Video slot picker */}
         {videoAddon && (
           <div className="mb-5">
             <VideoSlotPicker />
@@ -357,8 +374,84 @@ export function PreferencesRoute() {
         )}
 
         {videoAddon && !selectedVideoDate && (
-          <div className="mb-4 rounded-xl border border-gold/40 bg-gold-pale px-3 py-2.5 text-[12px] font-semibold text-deep">
+          <div className="mb-5 rounded-xl border border-gold/40 bg-gold-pale px-3 py-2.5 text-[12px] font-semibold text-deep">
             Please select a video date above to continue.
+          </div>
+        )}
+
+        {!videoAddon && <div className="mb-5" />}
+
+        {/* ── Step 3: Pick a board ────────────────────────────────────────── */}
+        <div className="mb-1 flex items-center gap-1.5">
+          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-deep text-[10px] font-bold text-white">
+            3
+          </span>
+          <span className="text-[13px] font-bold text-deep">Pick your board</span>
+          <span className="ml-1 rounded-full bg-rose/20 px-2 py-0.5 text-[9px] font-bold text-rose">
+            Required
+          </span>
+        </div>
+        <p className="mb-3 text-[11px] font-semibold text-ink-mute">
+          We curate your scoop to match the vibe of your chosen board. Pick the one that feels most like you.
+        </p>
+
+        <div className="mb-6 grid grid-cols-2 gap-3">
+          {BOARDS.map((board) => {
+            const selected = selectedBoard === board.id;
+            return (
+              <button
+                key={board.id}
+                onClick={() => setSelectedBoard(board.id)}
+                className={`group relative overflow-hidden rounded-2xl border-[2.5px] transition-all ${
+                  selected
+                    ? "border-rose shadow-md"
+                    : "border-line hover:border-gold-DEFAULT"
+                }`}
+              >
+                {/* Board image */}
+                <div className="relative h-44 w-full overflow-hidden">
+                  <img
+                    src={board.src}
+                    alt={board.label}
+                    className={`h-full w-full object-cover transition-transform duration-300 ${
+                      selected ? "scale-105" : "group-hover:scale-102"
+                    }`}
+                    loading="lazy"
+                  />
+                  {/* Overlay */}
+                  <div
+                    className={`absolute inset-0 transition-opacity ${
+                      selected ? "bg-rose/20" : "bg-transparent"
+                    }`}
+                  />
+                  {/* Selected badge */}
+                  {selected && (
+                    <div className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-rose text-[11px] font-bold text-white shadow">
+                      ✓
+                    </div>
+                  )}
+                </div>
+                {/* Label */}
+                <div
+                  className={`px-3 py-2.5 text-left transition-colors ${
+                    selected ? "bg-blush" : "bg-white/80"
+                  }`}
+                >
+                  <div className="font-serif text-[13px] font-bold text-deep">
+                    {board.emoji} {board.label}
+                  </div>
+                  <div className="text-[10px] font-semibold text-ink-mute">
+                    {board.subtitle}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {!selectedBoard && (
+          <div className="mb-4 rounded-xl border border-rose/30 bg-blush px-3 py-2.5 text-[12px] font-semibold text-deep">
+            Please pick a board above to continue.
           </div>
         )}
 
@@ -369,7 +462,7 @@ export function PreferencesRoute() {
         >
           Continue to checkout →
         </button>
-        <div className="h-4" />
+        <div className="h-8" />
       </div>
     </Screen>
   );
