@@ -160,6 +160,7 @@ export const useCartStore = create<CartState>()(
           vibes: [],
           favCategories: [],
           avoidNote: "",
+          selectedBoard: null,
           paymentMethod: "upi",
           contact: { ...EMPTY_CONTACT },
         }),
