@@ -72,6 +72,7 @@ interface CartState {
   toggleVibe: (v: string) => void;
   toggleCategory: (c: string) => void;
   setAvoidNote: (s: string) => void;
+  setSelectedBoard: (b: 1 | 2 | null) => void;
   // Actions – shop cart
   addToShopCart: (item: ShopCartItem) => void;
   updateShopCartQty: (itemId: string, qty: number) => void;
