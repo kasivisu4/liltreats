@@ -489,7 +489,7 @@ function AdminPanel({ onBack }: { onBack: () => void }) {
 }
 
 // ── Main export ──────────────────────────────────────────────────────────────
-type View = "login" | "orders" | "account";
+type View = "login" | "orders" | "account" | "admin";
 
 export function OrdersRoute() {
   const [view, setView] = useState<View>(() => getToken() ? "orders" : "login");
@@ -509,14 +509,24 @@ export function OrdersRoute() {
     return <AccountPanel onLogout={() => { clearToken(); setView("login"); }} />;
   }
 
+  if (view === "admin") {
+    return <AdminPanel onBack={() => setView("orders")} />;
+  }
+
   const token = getToken();
   const user = parseJwt(token);
+  const isAdmin = user?.role === "admin";
 
   return (
     <Screen top={
-      <div className="flex items-center justify-between px-4 py-3">
-        <TopBar title="My orders" />
-        <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 border-b border-line bg-cream/95 px-4 py-3">
+        <span className="font-serif text-[17px] font-bold text-deep">My orders</span>
+        <div className="ml-auto flex items-center gap-2">
+          {isAdmin && (
+            <button onClick={() => setView("admin")} className="flex items-center gap-1.5 rounded-xl border border-rose/30 bg-rose/10 px-3 py-1.5 text-[11px] font-bold text-rose">
+              <LayoutDashboard size={12} /> Admin
+            </button>
+          )}
           <button onClick={() => setView("account")} className="flex items-center gap-1.5 rounded-xl border border-line bg-white/60 px-3 py-1.5 text-[11px] font-bold text-deep">
             <User size={13} /> {user?.name?.split(" ")[0] ?? "Account"}
           </button>
