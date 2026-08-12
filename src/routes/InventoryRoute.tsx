@@ -88,6 +88,154 @@ function ItemRow({ item }: { item: ScoopItem }) {
   );
 }
 
+// ── Shop (Individual Items) ───────────────────────────────────────────────────
+
+const SHOP_CATS = ["All", "Jewellery", "Hair", "Accessories", "Beauty", "Trinkets", "Stationery", "Lifestyle"];
+
+export function ShopRoute() {
+  const navigate = useNavigate();
+  const { data: items = [], isLoading } = useIndividualItems();
+  const shopCart = useCartStore((s) => s.shopCart);
+  const addToShopCart = useCartStore((s) => s.addToShopCart);
+  const updateShopCartQty = useCartStore((s) => s.updateShopCartQty);
+  const removeFromShopCart = useCartStore((s) => s.removeFromShopCart);
+  const selectedTier = useCartStore((s) => s.selectedTier);
+  const [cat, setCat] = useState("All");
+  const [search, setSearch] = useState("");
+
+  const cartCount = shopCart.reduce((s, i) => s + i.quantity, 0);
+  const cartTotal = shopCart.reduce((s, i) => s + i.price * i.quantity, 0);
+
+  const filtered = items.filter((i) => {
+    const catOk = cat === "All" || i.category === cat;
+    const searchOk = !search || i.name.toLowerCase().includes(search.toLowerCase());
+    return catOk && searchOk && i.isActive;
+  }).sort((a, b) => {
+    if (a.isFeatured !== b.isFeatured) return a.isFeatured ? -1 : 1;
+    return a.stock === 0 ? 1 : b.stock === 0 ? -1 : 0;
+  });
+
+  function getQty(itemId: string) {
+    return shopCart.find((c) => c.itemId === itemId)?.quantity ?? 0;
+  }
+
+  function stockToneShop(stock: number) {
+    if (stock <= 0) return "out";
+    if (stock <= 5) return "low";
+    return "ok";
+  }
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex items-center justify-between border-b border-line bg-cream/95 px-4 py-3">
+        <div>
+          <div className="font-serif text-[20px] font-bold text-deep">Shop</div>
+          <div className="text-[11px] font-semibold text-ink-mute">Individual items · Mix & match</div>
+        </div>
+        {cartCount > 0 && (
+          <button
+            onClick={() => { if (!selectedTier) useCartStore.setState({ selectedTier: "mini" }); navigate({ to: "/cart" }); }}
+            className="flex items-center gap-2 rounded-2xl bg-deep px-4 py-2.5 text-[12px] font-bold text-cream"
+          >
+            <ShoppingCart size={14} />
+            {cartCount} · ₹{cartTotal.toLocaleString("en-IN")}
+          </button>
+        )}
+      </div>
+
+      {/* Search */}
+      <div className="border-b border-line px-4 py-2.5">
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search items…"
+          className="w-full rounded-xl border border-line bg-white/70 px-3.5 py-2 text-[13px] font-semibold text-deep outline-none focus:border-rose focus:ring-1 focus:ring-rose/20"
+        />
+      </div>
+
+      {/* Category chips */}
+      <div className="no-scrollbar flex gap-1.5 overflow-x-auto border-b border-line px-4 py-2.5">
+        {SHOP_CATS.map((c) => (
+          <button
+            key={c}
+            onClick={() => setCat(c)}
+            className={`flex-shrink-0 whitespace-nowrap rounded-full border px-3 py-1.5 text-[10px] font-bold transition-colors ${cat === c ? "border-deep bg-deep text-white" : "border-line bg-white/70 text-ink-soft"}`}
+          >
+            {c}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-3">
+        {isLoading ? (
+          <div className="grid grid-cols-2 gap-3">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="h-[200px] animate-pulse rounded-2xl bg-white/50" />
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="pt-16 text-center">
+            <ShoppingBag size={40} className="mx-auto mb-3 text-ink-mute" />
+            <p className="font-serif text-[16px] font-semibold text-deep">Nothing found</p>
+            <p className="mt-1 text-[12px] text-ink-mute">Try a different category or search.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-3">
+            {filtered.map((item) => {
+              const qty = getQty(item.id);
+              const tone = stockToneShop(item.stock);
+              const stockColor = tone === "out" ? "text-rose" : tone === "low" ? "text-[#C06820]" : "text-sage-DEFAULT";
+              const stockLabel = tone === "out" ? "Sold out" : tone === "low" ? `Only ${item.stock} left` : `${item.stock} in stock`;
+              return (
+                <div key={item.id} className={`flex flex-col rounded-2xl border border-line bg-white/70 p-3 ${item.stock === 0 ? "opacity-60" : ""}`}>
+                  <div className="mb-2 flex items-start justify-between gap-1">
+                    <span className="text-[32px]">{item.emoji}</span>
+                    <div className="flex flex-wrap justify-end gap-1">
+                      {item.isNew && <span className="rounded-lg bg-gold-pale px-1.5 py-[1px] text-[8px] font-bold text-gold">✦ New</span>}
+                      {item.isLimited && <span className="rounded-lg bg-lav px-1.5 py-[1px] text-[8px] font-bold text-lav-deep">Limited</span>}
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-serif text-[13px] font-bold leading-tight text-deep">{item.name}</div>
+                    <div className="mt-0.5 text-[10px] font-semibold text-ink-mute">{item.category}</div>
+                    <div className={`mt-1 text-[10px] font-bold ${stockColor}`}>{stockLabel}</div>
+                  </div>
+                  <div className="mt-3 flex items-center justify-between">
+                    <span className="font-serif text-[15px] font-bold text-deep">₹{item.sellingPrice}</span>
+                    {item.stock === 0 ? (
+                      <span className="rounded-xl border border-line px-3 py-1.5 text-[11px] font-bold text-ink-mute">Sold out</span>
+                    ) : qty === 0 ? (
+                      <button
+                        onClick={() => addToShopCart({ itemId: item.id, name: item.name, emoji: item.emoji, price: item.sellingPrice, quantity: 1 })}
+                        className="rounded-xl bg-deep px-3 py-1.5 text-[11px] font-bold text-cream transition-transform active:scale-95"
+                      >
+                        Add
+                      </button>
+                    ) : (
+                      <div className="flex items-center gap-1.5">
+                        <button onClick={() => qty === 1 ? removeFromShopCart(item.id) : updateShopCartQty(item.id, qty - 1)} className="flex h-7 w-7 items-center justify-center rounded-full border border-line bg-white/70 text-[13px] font-bold text-deep">
+                          <Minus size={12} />
+                        </button>
+                        <span className="w-5 text-center text-[13px] font-bold text-deep">{qty}</span>
+                        <button onClick={() => updateShopCartQty(item.id, qty + 1)} className="flex h-7 w-7 items-center justify-center rounded-full border border-line bg-white/70 text-[13px] font-bold text-deep">
+                          <Plus size={12} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+        <div className="h-6" />
+      </div>
+    </div>
+  );
+}
+
+// ── Scoops inventory ──────────────────────────────────────────────────────────
+
 export function InventoryRoute() {
   const data: ScoopItem[] = SCOOP_ITEMS;
   const isLoading = false;
