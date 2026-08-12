@@ -28,7 +28,7 @@
 | 16 | Admin Video Bookings Calendar | ✅ Complete | P1 |
 | 17 | Admin Inventory Management | ✅ Complete | P1 |
 | 18 | Admin Product Management | ✅ Complete | P1 |
-| 19 | Admin Scoop Management + Item Mapping | ⬜ Not Started | P1 |
+| 19 | Admin Scoop Management + Item Mapping | ✅ Complete | P1 |
 | 20 | Admin Payments | ✅ Complete | P1 |
 | 21 | Admin Customer Management | ✅ Complete | P1 |
 | 22 | Admin Delivery Management | ✅ Complete | P1 |
