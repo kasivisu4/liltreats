@@ -76,14 +76,24 @@ function ContactForm() {
     } finally { setLoading(false); }
   }
 
+  const waMessage = encodeURIComponent(`Hi LilTreats! I'm ${name}.\n\nTopic: ${topic}\n\n${message}`);
+
   if (sent) {
     return (
       <div className="mb-4 flex flex-col items-center gap-3 rounded-2xl border border-sage-DEFAULT/30 bg-[#EAF4EA] p-5 text-center">
         <CheckCircle size={36} className="text-sage-DEFAULT" />
         <div className="font-serif text-[16px] font-bold text-deep">Message sent!</div>
         <p className="text-[12px] font-semibold leading-relaxed text-ink-soft">
-          We'll get back to you within a few hours. For urgent queries, WhatsApp us directly.
+          We'll get back to you within a few hours. For anything urgent, tap below to WhatsApp us directly with your message pre-filled.
         </p>
+        <a
+          href={`https://wa.me/910000000000?text=${waMessage}`}
+          target="_blank"
+          rel="noreferrer"
+          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#1DA462] py-3 text-[13px] font-bold text-white"
+        >
+          <MessageCircle size={15} /> Send on WhatsApp too
+        </a>
         <button onClick={() => { setSent(false); setName(""); setPhone(""); setMessage(""); setTopic(TOPICS[0]); }} className="text-[12px] font-bold text-mauve underline underline-offset-2">
           Send another message
         </button>
