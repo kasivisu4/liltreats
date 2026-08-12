@@ -52,9 +52,7 @@ function StepIndicator({ current }: { current: number }) {
 // ── Inline VideoSlotPicker ─────────────────────────────────────────────────────
 function VideoSlotPicker() {
   const setVideoSlot = useCartStore((s) => s.setVideoSlot);
-  const selectedSlotId = useCartStore((s) => s.selectedVideoSlotId);
   const selectedDate = useCartStore((s) => s.selectedVideoDate);
-  const timeSectionRef = useRef<HTMLDivElement>(null);
 
   const today = new Date();
   const minDate = new Date(today);
@@ -67,16 +65,25 @@ function VideoSlotPicker() {
 
   const { data: slots = [] } = useVideoSlots(fromStr, toStr);
 
-  // Group slots by date
+  // Build available dates — deduplicate and check capacity
   const byDate: Record<string, typeof slots> = {};
   slots.forEach((s) => {
     if (!byDate[s.date]) byDate[s.date] = [];
     byDate[s.date].push(s);
   });
 
-  const dates = Object.keys(byDate).sort();
+  // If no slots from API, generate the next 30 available dates as fallback
+  const apiDates = Object.keys(byDate).sort();
+  const dates = apiDates.length > 0 ? apiDates : (() => {
+    const result: string[] = [];
+    const d = new Date(minDate);
+    while (result.length < 30) {
+      result.push(d.toISOString().split("T")[0]);
+      d.setDate(d.getDate() + 1);
+    }
+    return result;
+  })();
 
-  // Week navigation
   const [weekStart, setWeekStart] = useState(0);
   const DAYS_PER_PAGE = 7;
   const visibleDates = dates.slice(weekStart, weekStart + DAYS_PER_PAGE);
@@ -85,171 +92,107 @@ function VideoSlotPicker() {
     const d = new Date(dateStr + "T00:00:00");
     return {
       day: d.toLocaleDateString("en-IN", { weekday: "short" }),
-      date: d.toLocaleDateString("en-IN", { day: "numeric", month: "short" }),
+      num: d.toLocaleDateString("en-IN", { day: "numeric" }),
+      month: d.toLocaleDateString("en-IN", { month: "short" }),
+      full: d.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }),
     };
   }
 
   function isDayFull(dateStr: string) {
-    const daySlots = byDate[dateStr] ?? [];
+    const daySlots = byDate[dateStr];
+    if (!daySlots) return false;
     const totalBooked = daySlots.reduce((s, sl) => s + sl.bookedCount, 0);
     const totalCap = daySlots.reduce((s, sl) => s + sl.maxCapacity, 0);
     return totalBooked >= totalCap;
   }
 
   function selectDate(dateStr: string) {
-    useCartStore.setState({
-      selectedVideoDate: dateStr,
-      selectedVideoSlotId: null,
-      selectedVideoTime: null,
-    });
-    // Auto-scroll to time picker after a short delay so it's rendered first
-    setTimeout(() => {
-      timeSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    }, 80);
+    // Use first available slot id for that date, or a synthetic id
+    const daySlots = byDate[dateStr];
+    const slot = daySlots?.find((s) => !s.isBlocked && s.bookedCount < s.maxCapacity);
+    setVideoSlot(slot?.id ?? dateStr, dateStr, slot?.time ?? "");
   }
-
-  const slotsForDate = selectedDate ? (byDate[selectedDate] ?? []) : [];
 
   return (
     <div className="rounded-2xl border border-gold-light bg-white/70 p-4">
-      {/* Step 1 — Date */}
       <div className="mb-3 flex items-center gap-2">
-        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-deep text-[10px] font-bold text-white">1</div>
-        <Calendar size={14} className="text-gold" />
-        <span className="font-serif text-[14px] font-bold text-deep">Pick a date</span>
+        <Calendar size={15} className="text-gold-DEFAULT" />
+        <span className="font-serif text-[14px] font-bold text-deep">Pick your video date</span>
       </div>
 
-      <p className="mb-3 text-[11px] font-semibold leading-relaxed text-ink-soft">
-        Available from{" "}
+      <p className="mb-4 text-[11px] font-semibold leading-relaxed text-ink-soft">
+        Earliest available:{" "}
         <span className="font-bold text-deep">
           {minDate.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
-        </span>{" "}
-        — max 2 bookings per day.
+        </span>
+        . We'll confirm your exact time 24 hrs before.
       </p>
 
-      {/* Date picker row */}
-      <div className="mb-4">
-        <div className="mb-2 flex items-center justify-between">
-          <button
-            onClick={() => setWeekStart(Math.max(0, weekStart - DAYS_PER_PAGE))}
-            disabled={weekStart === 0}
-            className="flex h-7 w-7 items-center justify-center rounded-full border border-line bg-white/70 disabled:opacity-30"
-          >
-            <ChevronLeft size={14} />
-          </button>
-          <span className="text-[11px] font-bold text-ink-mute">
-            {visibleDates[0] ? fmtDate(visibleDates[0]).date : ""} —{" "}
-            {visibleDates[visibleDates.length - 1]
-              ? fmtDate(visibleDates[visibleDates.length - 1]).date
-              : ""}
-          </span>
-          <button
-            onClick={() =>
-              setWeekStart(Math.min(dates.length - DAYS_PER_PAGE, weekStart + DAYS_PER_PAGE))
-            }
-            disabled={weekStart + DAYS_PER_PAGE >= dates.length}
-            className="flex h-7 w-7 items-center justify-center rounded-full border border-line bg-white/70 disabled:opacity-30"
-          >
-            <ChevronRight size={14} />
-          </button>
-        </div>
-        <div className="grid grid-cols-7 gap-1">
-          {visibleDates.map((dateStr) => {
-            const full = isDayFull(dateStr);
-            const selected = selectedDate === dateStr;
-            const { day, date } = fmtDate(dateStr);
-            return (
-              <button
-                key={dateStr}
-                disabled={full}
-                onClick={() => selectDate(dateStr)}
-                className={`flex flex-col items-center rounded-xl border py-2 text-center transition-all ${
-                  selected
-                    ? "border-rose bg-blush shadow-sm"
-                    : full
-                      ? "border-line bg-white/30 opacity-40"
-                      : "border-line bg-white/60 hover:border-gold"
-                }`}
-              >
-                <span className="text-[9px] font-bold uppercase tracking-wide text-ink-mute">
-                  {day}
-                </span>
-                <span
-                  className={`text-[11px] font-bold ${selected ? "text-deep" : full ? "text-ink-mute" : "text-deep"}`}
-                >
-                  {date.split(" ")[0]}
-                </span>
-                <span className="text-[8px] font-semibold text-ink-mute">
-                  {date.split(" ")[1]}
-                </span>
-                {full && (
-                  <span className="mt-0.5 text-[7px] font-bold text-rose">Full</span>
-                )}
-              </button>
-            );
-          })}
-        </div>
+      {/* Week nav */}
+      <div className="mb-2 flex items-center justify-between">
+        <button
+          onClick={() => setWeekStart(Math.max(0, weekStart - DAYS_PER_PAGE))}
+          disabled={weekStart === 0}
+          className="flex h-7 w-7 items-center justify-center rounded-full border border-line bg-white/70 disabled:opacity-30"
+        >
+          <ChevronLeft size={14} />
+        </button>
+        <span className="text-[11px] font-bold text-ink-mute">
+          {visibleDates[0] ? `${fmtDate(visibleDates[0]).num} ${fmtDate(visibleDates[0]).month}` : ""}{" "}
+          —{" "}
+          {visibleDates[visibleDates.length - 1]
+            ? `${fmtDate(visibleDates[visibleDates.length - 1]).num} ${fmtDate(visibleDates[visibleDates.length - 1]).month}`
+            : ""}
+        </span>
+        <button
+          onClick={() =>
+            setWeekStart(Math.min(dates.length - DAYS_PER_PAGE, weekStart + DAYS_PER_PAGE))
+          }
+          disabled={weekStart + DAYS_PER_PAGE >= dates.length}
+          className="flex h-7 w-7 items-center justify-center rounded-full border border-line bg-white/70 disabled:opacity-30"
+        >
+          <ChevronRight size={14} />
+        </button>
       </div>
 
-      {/* Step 2 — Time */}
-      <div ref={timeSectionRef}>
-        {!selectedDate ? (
-          <div className="flex items-center gap-2 rounded-xl border border-dashed border-line bg-white/40 px-3 py-3">
-            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-line text-[10px] font-bold text-ink-mute">2</div>
-            <Clock size={13} className="text-ink-mute" />
-            <span className="text-[12px] font-semibold text-ink-mute">
-              Select a date above to see available times
-            </span>
-          </div>
-        ) : (
-          <div>
-            <div className="mb-2 flex items-center gap-2">
-              <div className="flex h-5 w-5 items-center justify-center rounded-full bg-deep text-[10px] font-bold text-white">2</div>
-              <Clock size={14} className="text-gold" />
-              <span className="text-[13px] font-bold text-deep">Pick a time</span>
-              <span className="ml-auto text-[11px] font-semibold text-ink-mute">
-                {fmtDate(selectedDate).date}
-              </span>
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              {slotsForDate.map((slot) => {
-                const available = !slot.isBlocked && slot.bookedCount < slot.maxCapacity;
-                const isSelected = selectedSlotId === slot.id;
-                return (
-                  <button
-                    key={slot.id}
-                    disabled={!available}
-                    onClick={() => setVideoSlot(slot.id, slot.date, slot.time)}
-                    className={`flex flex-col items-center rounded-xl border py-2.5 text-[11px] font-bold transition-all ${
-                      isSelected
-                        ? "border-rose bg-blush text-deep shadow-sm"
-                        : available
-                          ? "border-line bg-white/60 text-deep hover:border-gold"
-                          : "border-line bg-white/30 text-ink-mute opacity-40"
-                    }`}
-                  >
-                    {slot.time}
-                    {isSelected && (
-                      <span className="mt-0.5 text-[8px] font-bold text-rose">✓ Selected</span>
-                    )}
-                    {!available && (
-                      <span className="mt-0.5 text-[8px] font-semibold text-rose">Booked</span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
+      {/* Date grid */}
+      <div className="grid grid-cols-7 gap-1">
+        {visibleDates.map((dateStr) => {
+          const full = isDayFull(dateStr);
+          const selected = selectedDate === dateStr;
+          const { day, num, month } = fmtDate(dateStr);
+          return (
+            <button
+              key={dateStr}
+              disabled={full}
+              onClick={() => selectDate(dateStr)}
+              className={`flex flex-col items-center rounded-xl border py-2 text-center transition-all ${
+                selected
+                  ? "border-rose bg-blush shadow-sm"
+                  : full
+                    ? "border-line bg-white/30 opacity-40"
+                    : "border-line bg-white/60 hover:border-gold-DEFAULT"
+              }`}
+            >
+              <span className="text-[9px] font-bold uppercase tracking-wide text-ink-mute">{day}</span>
+              <span className={`text-[12px] font-bold ${selected ? "text-rose" : "text-deep"}`}>{num}</span>
+              <span className="text-[8px] font-semibold text-ink-mute">{month}</span>
+              {full && <span className="mt-0.5 text-[7px] font-bold text-rose">Full</span>}
+              {selected && <span className="mt-0.5 text-[7px] font-bold text-rose">✓</span>}
+            </button>
+          );
+        })}
       </div>
 
       {/* Confirmed banner */}
-      {selectedSlotId && (
-        <div className="mt-3 rounded-xl border border-sage-DEFAULT/30 bg-[#EAF4EA] px-3 py-2.5 text-center">
+      {selectedDate && (
+        <div className="mt-4 rounded-xl border border-sage-DEFAULT/30 bg-[#EAF4EA] px-3 py-2.5 text-center">
           <span className="text-[12px] font-bold text-sage-DEFAULT">
-            ✓ Confirmed — {fmtDate(selectedDate!).date} at{" "}
-            {slotsForDate.find((s) => s.id === selectedSlotId)?.time}
+            ✓ Date confirmed — {fmtDate(selectedDate).full}
           </span>
+          <p className="mt-0.5 text-[10px] font-semibold text-sage-DEFAULT/70">
+            We'll WhatsApp you the exact time 24 hrs before your unboxing.
+          </p>
         </div>
       )}
     </div>
