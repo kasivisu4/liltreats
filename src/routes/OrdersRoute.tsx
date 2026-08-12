@@ -272,6 +272,10 @@ function AdminPanel({ onBack }: { onBack: () => void }) {
     { id: "inventory", icon: Package, label: "Stock" },
     { id: "customers", icon: Users, label: "Customers" },
     { id: "bookings", icon: Video, label: "Videos" },
+    { id: "scoops", icon: Layers, label: "Scoops" },
+    { id: "slots", icon: Settings, label: "Slots" },
+    { id: "cms", icon: Globe, label: "CMS" },
+    { id: "notifications", icon: Bell, label: "Alerts" },
   ];
 
   const ALL_STATUSES: OrderStatus[] = ["confirmed", "preparing", "packed", "shipped", "out_for_delivery", "delivered", "cancelled"];
