@@ -21,10 +21,12 @@ const cartRoute = createRoute({ getParentRoute: () => rootRoute, path: "/cart", 
 const confirmRoute = createRoute({ getParentRoute: () => rootRoute, path: "/confirm", component: ConfirmRoute });
 const ordersRoute = createRoute({ getParentRoute: () => rootRoute, path: "/orders", component: OrdersRoute });
 const contactRoute = createRoute({ getParentRoute: () => rootRoute, path: "/contact", component: ContactRoute });
+const shopRoute = createRoute({ getParentRoute: () => rootRoute, path: "/shop", component: ShopRoute });
 
 const routeTree = rootRoute.addChildren([
   indexRoute,
   inventoryRoute,
+  shopRoute,
   bookRoute,
   cartRoute,
   confirmRoute,
