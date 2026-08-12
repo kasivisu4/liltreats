@@ -402,23 +402,60 @@ function AdminPanel({ onBack }: { onBack: () => void }) {
         {/* ── Inventory ── */}
         {tab === "inventory" && (
           <div>
-            <p className="mb-3 text-[11px] font-bold text-ink-mute">{allItems.length} items · tap to see details</p>
+            <p className="mb-3 text-[11px] font-bold text-ink-mute">{allItems.length} items · tap to edit stock</p>
             <div className="space-y-2">
               {allItems.map((item: IndividualItem) => {
                 const low = item.stock > 0 && item.stock <= item.minStock;
                 const out = item.stock === 0;
+                const isEditing = editingItem === item.id;
                 return (
-                  <div key={item.id} className={`flex items-center gap-3 rounded-2xl border p-3 ${out ? "border-rose/30 bg-rose/5" : low ? "border-[#E8C070]/60 bg-[#FFF8E8]" : "border-line bg-white/70"}`}>
-                    <span className="text-[22px]">{item.emoji}</span>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-[12px] font-bold text-deep">{item.name}</div>
-                      <div className="text-[10px] font-semibold text-ink-mute">{item.sku} · {item.category}</div>
-                    </div>
-                    <div className="text-right">
-                      <div className={`font-serif text-[16px] font-extrabold ${out ? "text-rose" : low ? "text-[#C06820]" : "text-deep"}`}>{item.stock}</div>
-                      <div className="text-[9px] font-bold text-ink-mute">₹{item.sellingPrice}</div>
-                    </div>
-                    {(low || out) && <AlertTriangle size={14} className={out ? "text-rose" : "text-[#C06820]"} />}
+                  <div key={item.id} className={`rounded-2xl border ${out ? "border-rose/30 bg-rose/5" : low ? "border-[#E8C070]/60 bg-[#FFF8E8]" : "border-line bg-white/70"}`}>
+                    <button onClick={() => { setEditingItem(isEditing ? null : item.id); setAddQty("1"); setAdjustQty(String(item.stock)); }} className="flex w-full items-center gap-3 p-3 text-left">
+                      <span className="text-[22px]">{item.emoji}</span>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[12px] font-bold text-deep">{item.name}</div>
+                        <div className="text-[10px] font-semibold text-ink-mute">{item.sku} · {item.category}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className={`font-serif text-[16px] font-extrabold ${out ? "text-rose" : low ? "text-[#C06820]" : "text-deep"}`}>{item.stock}</div>
+                        <div className="text-[9px] font-bold text-ink-mute">₹{item.sellingPrice}</div>
+                      </div>
+                      {(low || out) && <AlertTriangle size={14} className={out ? "text-rose" : "text-[#C06820]"} />}
+                    </button>
+                    {isEditing && (
+                      <div className="border-t border-line px-3 pb-3 pt-2.5 space-y-3">
+                        {/* Add stock */}
+                        <div>
+                          <div className="mb-1.5 text-[10px] font-bold uppercase tracking-wide text-ink-mute">Add stock</div>
+                          <div className="flex items-center gap-2">
+                            <button onClick={() => setAddQty(q => String(Math.max(1, Number(q) - 1)))} className="flex h-8 w-8 items-center justify-center rounded-xl border border-line bg-white/70"><Minus size={12} /></button>
+                            <input value={addQty} onChange={e => setAddQty(e.target.value)} className="w-16 rounded-xl border border-line bg-white/70 px-2 py-1.5 text-center text-[13px] font-bold text-deep outline-none" />
+                            <button onClick={() => setAddQty(q => String(Number(q) + 1))} className="flex h-8 w-8 items-center justify-center rounded-xl border border-line bg-white/70"><Plus size={12} /></button>
+                            <button
+                              onClick={() => addStock.mutate({ itemId: item.id, qty: Number(addQty), costPrice: item.costPrice, note: "Admin stock entry" }, { onSuccess: () => setEditingItem(null) })}
+                              disabled={addStock.isPending || Number(addQty) < 1}
+                              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-sage-DEFAULT py-2 text-[12px] font-bold text-white disabled:opacity-50"
+                            >
+                              <Plus size={13} /> Add
+                            </button>
+                          </div>
+                        </div>
+                        {/* Set exact stock */}
+                        <div>
+                          <div className="mb-1.5 text-[10px] font-bold uppercase tracking-wide text-ink-mute">Set exact stock</div>
+                          <div className="flex items-center gap-2">
+                            <input value={adjustQty} onChange={e => setAdjustQty(e.target.value)} placeholder="New qty" className="flex-1 rounded-xl border border-line bg-white/70 px-3 py-2 text-[13px] font-bold text-deep outline-none focus:border-rose" />
+                            <button
+                              onClick={() => adjustStock.mutate({ itemId: item.id, newQty: Number(adjustQty), reason: "Physical stock count" }, { onSuccess: () => setEditingItem(null) })}
+                              disabled={adjustStock.isPending || adjustQty === ""}
+                              className="flex items-center gap-1.5 rounded-xl bg-deep px-4 py-2 text-[12px] font-bold text-cream disabled:opacity-50"
+                            >
+                              <Check size={13} /> Set
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}
