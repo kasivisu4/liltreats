@@ -18,7 +18,7 @@ function lilTreatsApiPlugin(): Plugin {
         import("jsonwebtoken").then((m) => m.default),
         import("cors").then((m) => m.default),
       ]).then(([express, mongoose, bcrypt, jwt, cors]) => {
-        const MONGODB_URI = process.env.MONGODB_URI || "";
+        const MONGODB_URI = process.env.MONGO_URI || process.env.MONGODB_URI || "";
         const DB_NAME = process.env.DB_NAME || "liltreats";
         const JWT_SECRET = process.env.JWT_SECRET || "liltreats-dev-secret-2026";
         const API_PORT = parseInt(process.env.API_PORT || "5001", 10);
