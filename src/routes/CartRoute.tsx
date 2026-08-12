@@ -68,8 +68,8 @@ export function CartRoute() {
   const tier = selectedTier ? TIER_BY_ID(selectedTier) : null;
 
   const shopTotal = shopCart.reduce((s, i) => s + i.price * i.quantity, 0);
-  const videoPrice = videoAddon ? VIDEO_ADDON_PRICE : 0;
-  const total = tier.price + SHIPPING_FLAT + videoPrice + shopTotal;
+  const videoPrice = videoAddon && tier ? VIDEO_ADDON_PRICE : 0;
+  const total = (tier ? tier.price : 0) + SHIPPING_FLAT + videoPrice + shopTotal;
 
   const itemsPreview =
     favCategories.length > 0
