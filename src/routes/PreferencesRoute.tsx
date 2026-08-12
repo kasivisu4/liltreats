@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { ChevronLeft, ChevronRight, Calendar, Clock } from "lucide-react";
 import { Screen } from "../components/Screen";
