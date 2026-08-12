@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Home, Sparkles, ShoppingBag, Receipt, MessageCircle, Instagram, UserCircle } from "lucide-react";
+import { Home, Sparkles, ShoppingBag, MessageCircle, Instagram, UserCircle } from "lucide-react";
 
 const NAV = [
   { to: "/",          label: "Home",               icon: Home,          exact: true  },
