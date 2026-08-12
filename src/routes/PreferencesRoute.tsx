@@ -423,7 +423,7 @@ export function PreferencesRoute() {
         <textarea
           value={avoidNote}
           onChange={(e) => setAvoidNote(e.target.value)}
-          placeholder="e.g. hair claws, I'm allergic to nickel, I already have too many rings…"
+          placeholder="e.g. Hair Claw, Ear rings, Socks, Rings… (name one item only)"
           rows={2}
           maxLength={120}
           className="field-input mb-1 resize-none"
