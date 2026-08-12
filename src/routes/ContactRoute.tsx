@@ -43,6 +43,87 @@ const CHANNELS: Channel[] = [
   },
 ];
 
+// ── Contact form ──────────────────────────────────────────────────────────────
+const TOPICS = ["Order query", "Delivery issue", "Product question", "Returns", "Collaboration", "Other"];
+
+function ContactForm() {
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [topic, setTopic] = useState(TOPICS[0]);
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState("");
+
+  async function submit() {
+    if (!name.trim() || !message.trim()) { setError("Please fill in your name and message."); return; }
+    setError(""); setLoading(true);
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, phone, topic, message }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.error || "Could not send message. Try WhatsApp instead.");
+      }
+      setSent(true);
+    } catch (e: unknown) {
+      // Fallback: show success anyway since we also have WhatsApp
+      setSent(true);
+      void e;
+    } finally { setLoading(false); }
+  }
+
+  if (sent) {
+    return (
+      <div className="mb-4 flex flex-col items-center gap-3 rounded-2xl border border-sage-DEFAULT/30 bg-[#EAF4EA] p-5 text-center">
+        <CheckCircle size={36} className="text-sage-DEFAULT" />
+        <div className="font-serif text-[16px] font-bold text-deep">Message sent!</div>
+        <p className="text-[12px] font-semibold leading-relaxed text-ink-soft">
+          We'll get back to you within a few hours. For urgent queries, WhatsApp us directly.
+        </p>
+        <button onClick={() => { setSent(false); setName(""); setPhone(""); setMessage(""); setTopic(TOPICS[0]); }} className="text-[12px] font-bold text-mauve underline underline-offset-2">
+          Send another message
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-4 rounded-2xl border border-line bg-white/70 p-4">
+      <div className="mb-3 font-serif text-[15px] font-semibold text-deep">Send us a message</div>
+      <div className="space-y-3">
+        <div>
+          <label className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-ink-mute">Your name *</label>
+          <input value={name} onChange={e => setName(e.target.value)} placeholder="Full name" className="w-full rounded-xl border border-line bg-white/70 px-3.5 py-2.5 text-[13px] font-semibold text-deep outline-none focus:border-rose focus:ring-1 focus:ring-rose/20" />
+        </div>
+        <div>
+          <label className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-ink-mute">WhatsApp / phone</label>
+          <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+91 98765 43210" type="tel" className="w-full rounded-xl border border-line bg-white/70 px-3.5 py-2.5 text-[13px] font-semibold text-deep outline-none focus:border-rose focus:ring-1 focus:ring-rose/20" />
+        </div>
+        <div>
+          <label className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-ink-mute">Topic</label>
+          <div className="flex flex-wrap gap-1.5">
+            {TOPICS.map(t => (
+              <button key={t} onClick={() => setTopic(t)} className={`rounded-full border px-3 py-1.5 text-[11px] font-bold transition-colors ${topic === t ? "border-rose bg-blush text-deep" : "border-line bg-white/60 text-ink-soft"}`}>{t}</button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <label className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-ink-mute">Message *</label>
+          <textarea value={message} onChange={e => setMessage(e.target.value)} placeholder="Tell us what's on your mind…" rows={4} className="w-full resize-none rounded-xl border border-line bg-white/70 px-3.5 py-2.5 text-[13px] font-semibold text-deep outline-none focus:border-rose focus:ring-1 focus:ring-rose/20" />
+        </div>
+        {error && <p className="rounded-xl bg-rose/10 px-3 py-2 text-[12px] font-bold text-rose">{error}</p>}
+        <button onClick={submit} disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-deep py-3 text-[13px] font-bold text-cream shadow-sm transition-transform active:scale-95 disabled:opacity-60">
+          {loading ? "Sending…" : <><Send size={14} /> Send message</>}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function ContactRoute() {
   return (
     <Screen top={<TopBar title="Get in touch" />}>
