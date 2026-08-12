@@ -5,7 +5,7 @@ import {
 } from "@tanstack/react-router";
 import { AppLayout } from "./components/AppLayout";
 import { HomeRoute } from "./routes/HomeRoute";
-import { InventoryRoute } from "./routes/InventoryRoute";
+import { InventoryRoute, ShopRoute } from "./routes/InventoryRoute";
 import { PreferencesRoute } from "./routes/PreferencesRoute";
 import { CartRoute } from "./routes/CartRoute";
 import { ConfirmRoute } from "./routes/ConfirmRoute";
