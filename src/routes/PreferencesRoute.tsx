@@ -373,7 +373,7 @@ export function PreferencesRoute() {
           </span>
         </div>
         <div className="mb-2 rounded-xl border border-line bg-white/60 px-3 py-2 text-[11px] font-semibold leading-relaxed text-ink-soft">
-          You may name <span className="font-bold text-deep">only 1 item</span> to avoid. We'll do our best to exclude it, but since the scoop is random we cannot guarantee it. Mention allergies, something you already own, or a style that really isn't you.
+          You may name <span className="font-bold text-deep">only 1 item</span> to avoid. We'll do our best to exclude it, but since the scoop is random we cannot guarantee it.
         </div>
         <textarea
           value={avoidNote}
