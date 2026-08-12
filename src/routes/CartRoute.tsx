@@ -137,21 +137,23 @@ export function CartRoute() {
       <StepIndicator current={2} />
 
       <div className="p-4">
-        {/* Scoop summary */}
+        {/* Order summary */}
         <div className="mb-1 text-[10px] font-bold uppercase tracking-[1.5px] text-ink-mute">
           Your order
         </div>
         <div className="card-glass mb-4 p-4">
-          <div className="mb-2.5 flex items-center gap-3 border-b border-line pb-2.5">
-            <span className="text-[28px]">{tier.icon}</span>
-            <div className="flex-1">
-              <div className="font-serif text-[15px] font-semibold text-deep">{tier.name}</div>
-              <div className="text-[12px] font-semibold text-ink-soft">{tier.itemsLabel}</div>
+          {tier && (
+            <div className="mb-2.5 flex items-center gap-3 border-b border-line pb-2.5">
+              <span className="text-[28px]">{tier.icon}</span>
+              <div className="flex-1">
+                <div className="font-serif text-[15px] font-semibold text-deep">{tier.name}</div>
+                <div className="text-[12px] font-semibold text-ink-soft">{tier.itemsLabel}</div>
+              </div>
+              <div className="font-serif text-[20px] font-bold text-deep">
+                ₹{tier.price.toLocaleString("en-IN")}
+              </div>
             </div>
-            <div className="font-serif text-[20px] font-bold text-deep">
-              ₹{tier.price.toLocaleString("en-IN")}
-            </div>
-          </div>
+          )}
 
           {videoAddon && (
             <div className="mb-2 flex items-center gap-2 rounded-xl border border-rose/20 bg-[#FFF0F4] px-3 py-2">
