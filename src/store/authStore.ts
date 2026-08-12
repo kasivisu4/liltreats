@@ -74,6 +74,7 @@ export const useAuthStore = create<AuthState>()(
 
       login: async (email, password) => {
         const data = await apiFetch("/login", { email, password });
+        setCookie("lt_token", data.token);
         set({
           user: toAuthUser(data.user),
           token: data.token,
@@ -83,6 +84,7 @@ export const useAuthStore = create<AuthState>()(
 
       signup: async (name, phone, email, password) => {
         const data = await apiFetch("/signup", { name, phone, email, password });
+        setCookie("lt_token", data.token);
         set({
           user: toAuthUser(data.user),
           token: data.token,
@@ -90,7 +92,10 @@ export const useAuthStore = create<AuthState>()(
         });
       },
 
-      logout: () => set({ user: null, token: null, isLoggedIn: false }),
+      logout: () => {
+        clearCookie("lt_token");
+        set({ user: null, token: null, isLoggedIn: false });
+      },
 
       updateProfile: (fields) =>
         set((s) => (s.user ? { user: { ...s.user, ...fields } } : {})),
