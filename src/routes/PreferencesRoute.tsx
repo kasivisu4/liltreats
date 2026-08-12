@@ -292,33 +292,108 @@ export function PreferencesRoute() {
           </div>
         </div>
 
-        {/* ── Step 1: Anything to avoid ───────────────────────────────────── */}
+        {/* Mystery scoop notice */}
+        <div className="mb-5 rounded-2xl border border-gold-DEFAULT/40 bg-gradient-to-br from-[#FDF8F0] to-[#F7EDD4] p-4">
+          <p className="text-[12px] font-bold leading-relaxed text-deep">
+            🎁 This is a Mystery Scoop — items are completely random and cannot be predicted.
+          </p>
+          <p className="mt-1 text-[11px] font-semibold leading-relaxed text-ink-soft">
+            You'll receive whichever items come in your scoop. The only thing you can influence is your board choice and one item to avoid.
+          </p>
+        </div>
+
+        {/* ── Step 1: Pick a board ────────────────────────────────────────── */}
         <div className="mb-1 flex items-center gap-1.5">
           <span className="flex h-5 w-5 items-center justify-center rounded-full bg-deep text-[10px] font-bold text-white">
             1
           </span>
-          <span className="text-[13px] font-bold text-deep">Anything to avoid?</span>
-          <span className="ml-1 rounded-full bg-line px-2 py-0.5 text-[9px] font-bold text-ink-mute">
-            Optional
+          <span className="text-[13px] font-bold text-deep">Pick your board</span>
+          <span className="ml-1 rounded-full bg-rose/20 px-2 py-0.5 text-[9px] font-bold text-rose">
+            Required
           </span>
         </div>
-        <p className="mb-2 text-[11px] font-semibold text-ink-mute">
-          Allergies, styles you dislike, things you already own too many of — tell us.
+        <p className="mb-3 text-[11px] font-semibold text-ink-mute">
+          Each board has different items. Pick the one whose items you'd prefer your scoop to come from.
         </p>
-        <textarea
-          value={avoidNote}
-          onChange={(e) => setAvoidNote(e.target.value)}
-          placeholder="e.g. no danglers, skip strong scents, allergic to nickel…"
-          rows={3}
-          className="field-input mb-6 resize-none"
-        />
 
-        {/* ── Step 2: Video addon ─────────────────────────────────────────── */}
+        <div className="mb-6 grid grid-cols-2 gap-3">
+          {BOARDS.map((board) => {
+            const selected = selectedBoard === board.id;
+            return (
+              <button
+                key={board.id}
+                onClick={() => setSelectedBoard(board.id)}
+                className={`group relative overflow-hidden rounded-2xl border-[2.5px] transition-all ${
+                  selected
+                    ? "border-rose shadow-md"
+                    : "border-line hover:border-gold-DEFAULT"
+                }`}
+              >
+                <div className="relative h-44 w-full overflow-hidden">
+                  <img
+                    src={board.src}
+                    alt={board.label}
+                    className="h-full w-full object-cover"
+                    loading="lazy"
+                  />
+                  <div className={`absolute inset-0 transition-opacity ${selected ? "bg-rose/15" : "bg-black/5"}`} />
+                  {selected && (
+                    <div className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-rose text-[11px] font-bold text-white shadow">
+                      ✓
+                    </div>
+                  )}
+                </div>
+                <div className={`px-3 py-2.5 text-left transition-colors ${selected ? "bg-blush" : "bg-white/80"}`}>
+                  <div className="font-serif text-[13px] font-bold text-deep">
+                    {board.emoji} {board.label}
+                  </div>
+                  <div className="text-[10px] font-semibold text-ink-mute">
+                    {board.subtitle}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {!selectedBoard && (
+          <div className="mb-5 rounded-xl border border-rose/30 bg-blush px-3 py-2.5 text-[12px] font-semibold text-deep">
+            Please pick a board above to continue.
+          </div>
+        )}
+
+        {/* ── Step 2: Anything to avoid ───────────────────────────────────── */}
         <div className="mb-1 flex items-center gap-1.5">
           <span className="flex h-5 w-5 items-center justify-center rounded-full bg-deep text-[10px] font-bold text-white">
             2
           </span>
-          <span className="text-[13px] font-bold text-deep">Choose your experience</span>
+          <span className="text-[13px] font-bold text-deep">One thing to avoid</span>
+          <span className="ml-1 rounded-full bg-line px-2 py-0.5 text-[9px] font-bold text-ink-mute">
+            Optional
+          </span>
+        </div>
+        <div className="mb-2 rounded-xl border border-line bg-white/60 px-3 py-2 text-[11px] font-semibold leading-relaxed text-ink-soft">
+          You may name <span className="font-bold text-deep">only 1 item</span> to avoid. We'll do our best to exclude it, but since the scoop is random we cannot guarantee it. Mention allergies, something you already own, or a style that really isn't you.
+        </div>
+        <textarea
+          value={avoidNote}
+          onChange={(e) => setAvoidNote(e.target.value)}
+          placeholder="e.g. hair claws, I'm allergic to nickel, I already have too many rings…"
+          rows={2}
+          maxLength={120}
+          className="field-input mb-1 resize-none"
+        />
+        <div className="mb-6 flex justify-between text-[10px] font-semibold text-ink-mute">
+          <span>One item only — keep it specific</span>
+          <span>{avoidNote.length}/120</span>
+        </div>
+
+        {/* ── Step 3: Video addon ─────────────────────────────────────────── */}
+        <div className="mb-1 flex items-center gap-1.5">
+          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-deep text-[10px] font-bold text-white">
+            3
+          </span>
+          <span className="text-[13px] font-bold text-deep">With or without video?</span>
         </div>
         <p className="mb-3 text-[11px] font-semibold text-ink-mute">
           Add a professional unboxing video of your scoop — filmed, edited, and yours to keep.
@@ -349,7 +424,7 @@ export function PreferencesRoute() {
             onClick={() => setVideoAddon(false)}
             className={`flex flex-col items-center gap-2 rounded-2xl border-[1.5px] p-4 text-center transition-all ${
               !videoAddon
-                ? "border-gold bg-gradient-to-br from-[#FDF8F0] to-[#F7EDD4] shadow-sm"
+                ? "border-gold-DEFAULT bg-gradient-to-br from-[#FDF8F0] to-[#F7EDD4] shadow-sm"
                 : "border-line bg-white/70"
             }`}
           >
@@ -361,7 +436,7 @@ export function PreferencesRoute() {
               </div>
             </div>
             {!videoAddon && (
-              <span className="rounded-full bg-gold px-2.5 py-0.5 text-[10px] font-bold text-white">
+              <span className="rounded-full bg-gold-DEFAULT px-2.5 py-0.5 text-[10px] font-bold text-white">
                 Selected
               </span>
             )}
@@ -375,86 +450,12 @@ export function PreferencesRoute() {
         )}
 
         {videoAddon && !selectedVideoDate && (
-          <div className="mb-5 rounded-xl border border-gold/40 bg-gold-pale px-3 py-2.5 text-[12px] font-semibold text-deep">
+          <div className="mb-5 rounded-xl border border-gold-DEFAULT/40 bg-[#FDF8F0] px-3 py-2.5 text-[12px] font-semibold text-deep">
             Please select a video date above to continue.
           </div>
         )}
 
         {!videoAddon && <div className="mb-5" />}
-
-        {/* ── Step 3: Pick a board ────────────────────────────────────────── */}
-        <div className="mb-1 flex items-center gap-1.5">
-          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-deep text-[10px] font-bold text-white">
-            3
-          </span>
-          <span className="text-[13px] font-bold text-deep">Pick your board</span>
-          <span className="ml-1 rounded-full bg-rose/20 px-2 py-0.5 text-[9px] font-bold text-rose">
-            Required
-          </span>
-        </div>
-        <p className="mb-3 text-[11px] font-semibold text-ink-mute">
-          We curate your scoop to match the vibe of your chosen board. Pick the one that feels most like you.
-        </p>
-
-        <div className="mb-6 grid grid-cols-2 gap-3">
-          {BOARDS.map((board) => {
-            const selected = selectedBoard === board.id;
-            return (
-              <button
-                key={board.id}
-                onClick={() => setSelectedBoard(board.id)}
-                className={`group relative overflow-hidden rounded-2xl border-[2.5px] transition-all ${
-                  selected
-                    ? "border-rose shadow-md"
-                    : "border-line hover:border-gold-DEFAULT"
-                }`}
-              >
-                {/* Board image */}
-                <div className="relative h-44 w-full overflow-hidden">
-                  <img
-                    src={board.src}
-                    alt={board.label}
-                    className={`h-full w-full object-cover transition-transform duration-300 ${
-                      selected ? "scale-105" : "group-hover:scale-102"
-                    }`}
-                    loading="lazy"
-                  />
-                  {/* Overlay */}
-                  <div
-                    className={`absolute inset-0 transition-opacity ${
-                      selected ? "bg-rose/20" : "bg-transparent"
-                    }`}
-                  />
-                  {/* Selected badge */}
-                  {selected && (
-                    <div className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-rose text-[11px] font-bold text-white shadow">
-                      ✓
-                    </div>
-                  )}
-                </div>
-                {/* Label */}
-                <div
-                  className={`px-3 py-2.5 text-left transition-colors ${
-                    selected ? "bg-blush" : "bg-white/80"
-                  }`}
-                >
-                  <div className="font-serif text-[13px] font-bold text-deep">
-                    {board.emoji} {board.label}
-                  </div>
-                  <div className="text-[10px] font-semibold text-ink-mute">
-                    {board.subtitle}
-                  </div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-
-        {!selectedBoard && (
-          <div className="mb-4 rounded-xl border border-rose/30 bg-blush px-3 py-2.5 text-[12px] font-semibold text-deep">
-            Please pick a board above to continue.
-          </div>
-        )}
 
         <button
           onClick={() => navigate({ to: "/cart" })}
