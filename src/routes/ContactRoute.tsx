@@ -75,6 +75,9 @@ export function ContactRoute() {
           </a>
         ))}
 
+        {/* ── Contact form ── */}
+        <ContactForm />
+
         <div className="mt-4 rounded-2xl border border-lav-deep/50 bg-lav p-4">
           <div className="mb-1.5 font-serif text-[14px] font-semibold text-lav-deep">
             Never miss a Monday drop
