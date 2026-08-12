@@ -11,24 +11,25 @@ import { useVideoSlots } from "../api/queries";
 const VALID = new Set(TIERS.map((t) => t.id));
 
 // ── Board images ───────────────────────────────────────────────────────────────
-// Two curated mood-board illustrations the customer picks between.
-// Using public Unsplash photos that fit the aesthetic — warm, jewellery / trinkets.
+// The actual liltreats item board — customers pick which of the two boards
+// they want their scoop curated from (same physical board shown from two angles).
+const BOARD_IMG =
+  "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=600&q=80";
+
 const BOARDS = [
   {
     id: 1 as const,
-    label: "Board A",
-    subtitle: "Warm & golden",
-    emoji: "✨",
-    // Warm flat-lay of gold jewellery & accessories
-    src: "https://images.unsplash.com/photo-1596944924616-7b38e7cfac36?w=400&q=80",
+    label: "Board 1",
+    subtitle: "Left half — items 1 – 12",
+    emoji: "🎀",
+    src: BOARD_IMG,
   },
   {
     id: 2 as const,
-    label: "Board B",
-    subtitle: "Soft & minimal",
+    label: "Board 2",
+    subtitle: "Right half — items 13 – 24",
     emoji: "🌸",
-    // Soft pink minimal accessories flat-lay
-    src: "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=400&q=80",
+    src: BOARD_IMG,
   },
 ];
 
