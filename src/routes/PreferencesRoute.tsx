@@ -10,26 +10,43 @@ import { useVideoSlots } from "../api/queries";
 
 const VALID = new Set(TIERS.map((t) => t.id));
 
-// ── Board images ───────────────────────────────────────────────────────────────
-// The actual liltreats item board — customers pick which of the two boards
-// they want their scoop curated from (same physical board shown from two angles).
-const BOARD_IMG =
-  "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=600&q=80";
+// ── Board data ─────────────────────────────────────────────────────────────────
+// Board A & B — actual item lists from the liltreats mystery scoop boards.
+// To show real photos: drop board-a.jpg and board-b.jpg into /public/ and
+// the <img> tags below will pick them up automatically.
 
 const BOARDS = [
   {
     id: 1 as const,
-    label: "Board 1",
-    subtitle: "Left half — items 1 – 12",
+    label: "Board A",
     emoji: "🎀",
-    src: BOARD_IMG,
+    // Replace with /board-a.jpg once image is in /public/
+    src: "/board-a.jpg",
+    fallback: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=600&q=80",
+    items: [
+      "Scrunchy", "Key Chain", "Hair Claw", "Cute Locks",
+      "Soaptube", "Wallets", "Makeup Brush", "Rings",
+      "MiniBooks", "Hand Towel", "Organisers", "Hotpacks",
+      "Plushies", "Ear rings", "Bottle", "Wet Wipes",
+      "Notebook", "Desk Lamp", "Cute Pens", "Makeup Sponge",
+      "Chain", "Tumbler", "Bracelet", "Coin Pouch",
+    ],
   },
   {
     id: 2 as const,
-    label: "Board 2",
-    subtitle: "Right half — items 13 – 24",
+    label: "Board B",
     emoji: "🌸",
-    src: BOARD_IMG,
+    // Replace with /board-b.jpg once image is in /public/
+    src: "/board-b.jpg",
+    fallback: "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=600&q=80",
+    items: [
+      "Books", "Key Chain", "Sticky Notes", "Wet Wipes",
+      "Pens", "Decorative Tape", "Socks", "Tumbler",
+      "Waterbottle", "Hand Towel", "Coin Purse", "Glue Pen",
+      "MiniBooks", "Desk Lamp", "Pencil Pouch", "Sharpener",
+      "Press on Nails", "Washi Tape", "DIY Kit", "Cute Locks",
+      "Highlighter", "Eraser", "Paper Soap", "Stationery Set",
+    ],
   },
 ];
 
