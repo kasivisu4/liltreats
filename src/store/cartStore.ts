@@ -56,6 +56,7 @@ interface CartState {
   vibes: string[];
   favCategories: string[];
   avoidNote: string;
+  selectedBoard: 1 | 2 | null;
   // Individual items cart
   shopCart: ShopCartItem[];
   // Checkout
