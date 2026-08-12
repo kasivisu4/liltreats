@@ -76,26 +76,24 @@ export const useAuthStore = create<AuthState>()(
       login: async (email, password) => {
         const data = await apiFetch("/login", { email, password });
         setCookie("lt_token", data.token);
-        set({
-          user: toAuthUser(data.user),
-          token: data.token,
-          isLoggedIn: true,
-        });
+        const role = data.user?.role || "customer";
+        set({ user: toAuthUser(data.user), token: data.token, isLoggedIn: true });
+        // Sync into BottomNav/Sidebar inline store so nav updates immediately
+        _useInlineAuth.setState({ isLoggedIn: true, role });
       },
 
       signup: async (name, phone, email, password) => {
         const data = await apiFetch("/signup", { name, phone, email, password });
         setCookie("lt_token", data.token);
-        set({
-          user: toAuthUser(data.user),
-          token: data.token,
-          isLoggedIn: true,
-        });
+        const role = data.user?.role || "customer";
+        set({ user: toAuthUser(data.user), token: data.token, isLoggedIn: true });
+        _useInlineAuth.setState({ isLoggedIn: true, role });
       },
 
       logout: () => {
         clearCookie("lt_token");
         set({ user: null, token: null, isLoggedIn: false });
+        _useInlineAuth.setState({ isLoggedIn: false, role: null });
       },
 
       updateProfile: (fields) =>
