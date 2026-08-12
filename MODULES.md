@@ -34,10 +34,10 @@
 | 22 | Admin Delivery Management | ✅ Complete | P1 |
 | 23 | Admin Profit & Loss | ✅ Complete | P1 |
 | 24 | Admin Reports + CSV Export | ✅ Complete | P2 |
-| 25 | Admin Video Slot Configuration | 🔄 In Progress | P2 |
-| 26 | Website Content Management (CMS) | ⬜ Not Started | P2 |
-| 27 | Customer Notifications | ⬜ Not Started | P3 |
-| 28 | Admin Notifications | ⬜ Not Started | P3 |
+| 25 | Admin Video Slot Configuration | ✅ Complete | P2 |
+| 26 | Website Content Management (CMS) | ✅ Complete | P2 |
+| 27 | Customer Notifications | ✅ Complete | P3 |
+| 28 | Admin Notifications | ✅ Complete | P3 |
 | 29 | Coupon / Discount System | ⬜ Not Started | Future |
 | 30 | MongoDB Backend Integration | ✅ Connected | Atlas connected · authStore wired · 2 seed users created on startup |
 
