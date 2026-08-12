@@ -256,8 +256,14 @@ function AdminPanel({ onBack }: { onBack: () => void }) {
   const { data: bookings = [] } = useAllScoopBookings();
   const updateStatus = useUpdateOrderStatus();
   const updateDelivery = useUpdateDelivery();
+  const addStock = useAddStock();
+  const adjustStock = useAdjustStock();
+  const blockSlot = useBlockVideoSlot();
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [courierInput, setCourierInput] = useState<Record<string, { courier: string; tracking: string; url: string }>>({});
+  const [editingItem, setEditingItem] = useState<string | null>(null);
+  const [addQty, setAddQty] = useState("1");
+  const [adjustQty, setAdjustQty] = useState("");
 
   const ADMIN_TABS: { id: AdminTab; icon: typeof LayoutDashboard; label: string }[] = [
     { id: "dashboard", icon: LayoutDashboard, label: "Stats" },
