@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { Sparkles } from "lucide-react";
+import { Sparkles, ShoppingBag, Plus, Minus, ShoppingCart } from "lucide-react";
 import { TopBar } from "../components/TopBar";
 import { StockBar } from "../components/StockBar";
 import { INVENTORY as SCOOP_ITEMS } from "../data/inventory";
 import type { ScoopItem } from "../data/inventory";
 import type { TierId } from "../data/tiers";
+import { useIndividualItems } from "../api/queries";
+import { useCartStore } from "../store/cartStore";
+import { useNavigate } from "@tanstack/react-router";
 
 type Tab = "all" | TierId;
 type Badge = "all" | "new" | "lim" | "avail";
