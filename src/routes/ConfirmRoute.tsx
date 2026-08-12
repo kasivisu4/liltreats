@@ -58,12 +58,22 @@ export function ConfirmRoute() {
         </div>
 
         <div className="mb-3.5 flex gap-2">
-          <button className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-lav-deep/40 bg-white/70 py-2.5 text-[12px] font-bold text-lav-deep">
+          <a
+            href="https://www.instagram.com/_liltreats_/"
+            target="_blank"
+            rel="noreferrer"
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-lav-deep/40 bg-white/70 py-2.5 text-[12px] font-bold text-lav-deep transition-transform active:scale-95"
+          >
             <Instagram size={14} /> Share story
-          </button>
-          <button className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-[#B0DEC0] bg-white/70 py-2.5 text-[12px] font-bold text-[#1A6040]">
+          </a>
+          <a
+            href={`https://wa.me/?text=${encodeURIComponent("Just booked a mystery scoop box from @_liltreats_ 🎀✨ Check them out!")}`}
+            target="_blank"
+            rel="noreferrer"
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-[#B0DEC0] bg-white/70 py-2.5 text-[12px] font-bold text-[#1A6040] transition-transform active:scale-95"
+          >
             <MessageCircle size={14} /> Tell friends
-          </button>
+          </a>
         </div>
 
         <button
