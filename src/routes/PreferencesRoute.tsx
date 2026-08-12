@@ -333,40 +333,68 @@ export function PreferencesRoute() {
           Each board has different items. Pick the one whose items you'd prefer your scoop to come from.
         </p>
 
-        <div className="mb-6 grid grid-cols-2 gap-3">
+        <div className="mb-6 flex flex-col gap-4">
           {BOARDS.map((board) => {
             const selected = selectedBoard === board.id;
             return (
               <button
                 key={board.id}
                 onClick={() => setSelectedBoard(board.id)}
-                className={`group relative overflow-hidden rounded-2xl border-[2.5px] transition-all ${
+                className={`group relative overflow-hidden rounded-2xl border-[2.5px] text-left transition-all ${
                   selected
                     ? "border-rose shadow-md"
                     : "border-line hover:border-gold-DEFAULT"
                 }`}
               >
-                <div className="relative h-44 w-full overflow-hidden">
+                {/* Board photo */}
+                <div className="relative w-full overflow-hidden" style={{ aspectRatio: "4/3" }}>
                   <img
                     src={board.src}
                     alt={board.label}
                     className="h-full w-full object-cover"
                     loading="lazy"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = board.fallback;
+                    }}
                   />
-                  <div className={`absolute inset-0 transition-opacity ${selected ? "bg-rose/15" : "bg-black/5"}`} />
+                  <div className={`absolute inset-0 transition-opacity ${selected ? "bg-rose/10" : "bg-black/5"}`} />
+                  {/* Board label overlay */}
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent px-3 pb-2 pt-6">
+                    <span className="font-serif text-[15px] font-bold text-white drop-shadow">
+                      {board.emoji} {board.label}
+                    </span>
+                  </div>
                   {selected && (
-                    <div className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-rose text-[11px] font-bold text-white shadow">
+                    <div className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-rose text-[12px] font-bold text-white shadow-md">
                       ✓
                     </div>
                   )}
                 </div>
-                <div className={`px-3 py-2.5 text-left transition-colors ${selected ? "bg-blush" : "bg-white/80"}`}>
-                  <div className="font-serif text-[13px] font-bold text-deep">
-                    {board.emoji} {board.label}
+
+                {/* Item list */}
+                <div className={`px-3 py-3 transition-colors ${selected ? "bg-blush" : "bg-white/80"}`}>
+                  <p className="mb-2 text-[10px] font-bold uppercase tracking-wide text-ink-mute">
+                    Items on this board ({board.items.length})
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    {board.items.map((item) => (
+                      <span
+                        key={item}
+                        className={`rounded-full border px-2 py-0.5 text-[9px] font-semibold ${
+                          selected
+                            ? "border-rose/30 bg-white/70 text-deep"
+                            : "border-line bg-white/60 text-ink-soft"
+                        }`}
+                      >
+                        {item}
+                      </span>
+                    ))}
                   </div>
-                  <div className="text-[10px] font-semibold text-ink-mute">
-                    {board.subtitle}
-                  </div>
+                  {selected && (
+                    <div className="mt-2.5 rounded-lg bg-rose/10 px-2 py-1.5 text-center text-[10px] font-bold text-rose">
+                      ✓ Board {board.label.split(" ")[1]} selected — your scoop comes from these items
+                    </div>
+                  )}
                 </div>
               </button>
             );
