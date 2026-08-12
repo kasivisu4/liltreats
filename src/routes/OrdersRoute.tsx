@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
-import { Receipt, Truck, ExternalLink, Eye, EyeOff, LogOut, User, LayoutDashboard, Package, Users, Video, ChevronDown, ChevronUp, TrendingUp, AlertTriangle, Plus, Minus, Check } from "lucide-react";
+import { Receipt, Truck, ExternalLink, Eye, EyeOff, LogOut, User, LayoutDashboard, Package, Users, Video, ChevronDown, ChevronUp, TrendingUp, AlertTriangle, Plus, Minus, Check, Settings, Globe, Bell, Layers, Trash2, Edit3, X, Save } from "lucide-react";
 import { Screen } from "../components/Screen";
 import { TopBar } from "../components/TopBar";
 import { useOrders, useAllOrders, useDashboardStats, useAllInventoryItems, useCustomers, useUpdateOrderStatus, useUpdateDelivery, useAllScoopBookings, useAddStock, useAdjustStock, useBlockVideoSlot } from "../api/queries";
-import type { Order, OrderStatus, IndividualItem, Customer } from "../api/mockApi";
+import type { Order, OrderStatus, IndividualItem, Customer, VideoSlot } from "../api/mockApi";
+import { videoSlots as _videoSlots, individualItems as _allProducts } from "../api/mockApi";
 
 // ── Inline auth (cookie-backed, no external store needed) ────────────────────
 function getToken(): string { return document.cookie.split(";").map(c => c.trim()).find(c => c.startsWith("lt_token="))?.split("=")[1] ?? ""; }
