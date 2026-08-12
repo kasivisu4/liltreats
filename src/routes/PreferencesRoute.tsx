@@ -356,9 +356,9 @@ export function PreferencesRoute() {
           </div>
         )}
 
-        {videoAddon && !selectedVideoSlotId && (
+        {videoAddon && !selectedVideoDate && (
           <div className="mb-4 rounded-xl border border-gold/40 bg-gold-pale px-3 py-2.5 text-[12px] font-semibold text-deep">
-            Please select a video date and slot above to continue.
+            Please select a video date above to continue.
           </div>
         )}
 
