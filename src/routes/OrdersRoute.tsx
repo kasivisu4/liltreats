@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
-import { Receipt, Truck, ExternalLink, Eye, EyeOff, LogOut, User, LayoutDashboard, Package, Users, Video, ChevronDown, ChevronUp, TrendingUp, AlertTriangle } from "lucide-react";
+import { Receipt, Truck, ExternalLink, Eye, EyeOff, LogOut, User, LayoutDashboard, Package, Users, Video, ChevronDown, ChevronUp, TrendingUp, AlertTriangle, Plus, Minus, Check } from "lucide-react";
 import { Screen } from "../components/Screen";
 import { TopBar } from "../components/TopBar";
-import { useOrders, useAllOrders, useDashboardStats, useAllInventoryItems, useCustomers, useUpdateOrderStatus, useUpdateDelivery, useAllScoopBookings } from "../api/queries";
+import { useOrders, useAllOrders, useDashboardStats, useAllInventoryItems, useCustomers, useUpdateOrderStatus, useUpdateDelivery, useAllScoopBookings, useAddStock, useAdjustStock, useBlockVideoSlot } from "../api/queries";
 import type { Order, OrderStatus, IndividualItem, Customer } from "../api/mockApi";
 
 // ── Inline auth (cookie-backed, no external store needed) ────────────────────
