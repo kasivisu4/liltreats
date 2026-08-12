@@ -120,6 +120,7 @@ export const useCartStore = create<CartState>()(
             : [...s.favCategories, c],
         })),
       setAvoidNote: (s2) => set({ avoidNote: s2 }),
+      setSelectedBoard: (b) => set({ selectedBoard: b }),
 
       addToShopCart: (item) =>
         set((s) => {
