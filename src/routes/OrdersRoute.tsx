@@ -266,6 +266,76 @@ function AdminPanel({ onBack }: { onBack: () => void }) {
   const [addQty, setAddQty] = useState("1");
   const [adjustQty, setAdjustQty] = useState("");
 
+  // ── Module 19: Scoop mappings (in-memory for session) ──
+  type ScoopMapping = { productId: string; productName: string; qty: number };
+  const SCOOP_TIERS = [
+    { id: "mini", name: "Mini Scoop", price: 499, icon: "🌿" },
+    { id: "magic", name: "Magic Scoop", price: 899, icon: "✨" },
+    { id: "premium", name: "Premium Scoop", price: 1099, icon: "👑" },
+  ];
+  const [scoopMappings, setScoopMappings] = useState<Record<string, ScoopMapping[]>>({
+    mini: [
+      { productId: "p14", productName: "Holographic sticker sheet", qty: 2 },
+      { productId: "p12", productName: "Crystal nail charms", qty: 1 },
+      { productId: "p10", productName: "Tinted lip balm", qty: 1 },
+    ],
+    magic: [
+      { productId: "p01", productName: "Pearl drop earrings", qty: 1 },
+      { productId: "p04", productName: "Hair bow clips", qty: 1 },
+      { productId: "p11", productName: "Mini perfume vial", qty: 1 },
+      { productId: "p15", productName: "Crystal pocket stone", qty: 1 },
+    ],
+    premium: [
+      { productId: "p01", productName: "Pearl drop earrings", qty: 1 },
+      { productId: "p02", productName: "Charm bracelet", qty: 1 },
+      { productId: "p07", productName: "Celestial phone charm", qty: 1 },
+      { productId: "p08", productName: "Mini tote bag", qty: 1 },
+      { productId: "p18", productName: "Scented candle", qty: 1 },
+    ],
+  });
+  const [activeScoopTier, setActiveScoopTier] = useState("magic");
+  const [addProductId, setAddProductId] = useState("");
+  const [addProductQty, setAddProductQty] = useState("1");
+  const [scoopSaved, setScoopSaved] = useState(false);
+
+  // ── Module 25: Video slot config ──
+  const [liveSlots, setLiveSlots] = useState<VideoSlot[]>(() => [..._videoSlots]);
+  const [newSlotDate, setNewSlotDate] = useState("");
+  const [newSlotTime, setNewSlotTime] = useState("10:00 AM");
+  const [slotViewDate, setSlotViewDate] = useState(() => {
+    const d = new Date(); d.setDate(d.getDate() + 5);
+    return d.toISOString().split("T")[0];
+  });
+  const [videoConfig, setVideoConfig] = useState({ leadDays: 5, windowDays: 30, maxPerDay: 2 });
+  const [configSaved, setConfigSaved] = useState(false);
+
+  // ── Module 26: CMS ──
+  type CmsSection = "home" | "about" | "contact" | "faq";
+  const [cmsTab, setCmsTab] = useState<CmsSection>("home");
+  const [cmsData, setCmsData] = useState({
+    home: { headline: "Your Mystery Scoop. Your Surprise. Your LilTreat!", subtext: "Curated mystery boxes of jewellery, accessories & trinkets — delivered to your door.", ctaPrimary: "Explore Scoops", ctaSecondary: "Shop Individual Items", announcement: "" },
+    about: { story: "LilTreats started as a passion project in 2024 — we believe that the best gifts are the ones that surprise you.", mission: "Bringing joy through curated mystery scoops of handpicked accessories and trinkets.", instagram: "@_liltreats_" },
+    contact: { whatsapp: "+910000000000", instagram: "@_liltreats_", phone: "+910000000000", replyTime: "a few hours" },
+    faq: [] as { id: string; q: string; a: string }[],
+  });
+  const [editingFaq, setEditingFaq] = useState<string | null>(null);
+  const [newFaqQ, setNewFaqQ] = useState("");
+  const [newFaqA, setNewFaqA] = useState("");
+  const [cmsSaved, setCmsSaved] = useState<CmsSection | null>(null);
+
+  // ── Modules 27/28: Notifications ──
+  type Notif = { id: string; type: "customer" | "admin"; title: string; message: string; isRead: boolean; createdAt: string };
+  const [notifications, setNotifications] = useState<Notif[]>([
+    { id: "n01", type: "admin", title: "New order placed", message: "LT-2026-00042 · Magic Scoop + Video · ₹1,058 from Priya Sharma", isRead: false, createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString() },
+    { id: "n02", type: "admin", title: "Low stock alert", message: "Charm bracelet (JWL-002) — only 4 units remaining. Minimum is 5.", isRead: false, createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString() },
+    { id: "n03", type: "admin", title: "New video booking", message: "BKG-042 · Magic Scoop video on +8 days at 11:00 AM", isRead: true, createdAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString() },
+    { id: "n04", type: "admin", title: "Out of stock", message: "No items currently at 0 stock. Great work!", isRead: true, createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString() },
+    { id: "n05", type: "customer", title: "Order confirmed", message: "Your Magic Scoop order LT-2026-00042 is confirmed and being prepared!", isRead: false, createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString() },
+    { id: "n06", type: "customer", title: "Video booking confirmed", message: "Your video session is booked! See you on your selected date at 11:00 AM.", isRead: true, createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString() },
+    { id: "n07", type: "customer", title: "Order preparing", message: "We're packing your Mini Scoop order LT-2026-00031. Almost ready!", isRead: true, createdAt: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString() },
+  ]);
+  const [notifFilter, setNotifFilter] = useState<"all" | "admin" | "customer">("all");
+
   const ADMIN_TABS: { id: AdminTab; icon: typeof LayoutDashboard; label: string }[] = [
     { id: "dashboard", icon: LayoutDashboard, label: "Stats" },
     { id: "orders", icon: Receipt, label: "Orders" },
