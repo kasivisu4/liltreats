@@ -30,6 +30,14 @@ interface AuthState {
 
 const API = "/api/auth";
 
+// Cookie helpers — no expiry means session survives until explicit logout
+function setCookie(name: string, value: string) {
+  document.cookie = `${name}=${encodeURIComponent(value)}; path=/; SameSite=Lax`;
+}
+function clearCookie(name: string) {
+  document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+}
+
 async function apiFetch(path: string, body: object) {
   const res = await fetch(`${API}${path}`, {
     method: "POST",
