@@ -1,16 +1,11 @@
 import { Link } from "@tanstack/react-router";
-import { Home, Sparkles, Receipt, UserCircle } from "lucide-react";
-
-// Cookie auth helper — reads token without any external store
-function hasToken(): boolean {
-  return document.cookie.split(";").some(c => c.trim().startsWith("lt_token=") && c.split("=")[1]?.length > 0);
-}
+import { Home, Sparkles, ShoppingBag, Receipt } from "lucide-react";
 
 const TABS = [
-  { label: "Home",    icon: Home,        to: "/",          exact: true  },
-  { label: "Scoops",  icon: Sparkles,    to: "/inventory", exact: false },
-  { label: "Orders",  icon: Receipt,     to: "/orders",    exact: false },
-  { label: "Account", icon: UserCircle,  to: "/orders",    exact: false },
+  { label: "Home",   icon: Home,        to: "/",          exact: true  },
+  { label: "Scoops", icon: Sparkles,    to: "/inventory", exact: false },
+  { label: "Shop",   icon: ShoppingBag, to: "/shop",      exact: false },
+  { label: "Orders", icon: Receipt,     to: "/orders",    exact: false },
 ];
 
 export function BottomNav() {
