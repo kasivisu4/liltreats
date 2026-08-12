@@ -97,6 +97,7 @@ export const useCartStore = create<CartState>()(
       vibes: [],
       favCategories: [],
       avoidNote: "",
+      selectedBoard: null,
       shopCart: [],
       paymentMethod: "upi",
       contact: { ...EMPTY_CONTACT },
