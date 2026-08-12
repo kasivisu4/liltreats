@@ -90,7 +90,7 @@ export function CartRoute() {
   async function placeOrder() {
     if (!canSubmit) return;
     const order = await createOrder.mutateAsync({
-      tierId: tier.id,
+      tierId: tier?.id ?? "mini",
       videoAddon,
       videoSlotId: selectedVideoSlotId,
       shipping: SHIPPING_FLAT,
