@@ -234,6 +234,260 @@ function OrderCard({ order }: { order: Order }) {
   );
 }
 
+// ── Admin dashboard ───────────────────────────────────────────────────────────
+type AdminTab = "dashboard" | "orders" | "inventory" | "customers" | "bookings";
+
+function StatCard({ label, value, sub, color }: { label: string; value: string | number; sub?: string; color?: string }) {
+  return (
+    <div className="rounded-2xl border border-line bg-white/70 p-3.5">
+      <div className={`font-serif text-[22px] font-extrabold ${color ?? "text-deep"}`}>{value}</div>
+      <div className="mt-0.5 text-[11px] font-bold text-deep">{label}</div>
+      {sub && <div className="mt-0.5 text-[10px] font-semibold text-ink-mute">{sub}</div>}
+    </div>
+  );
+}
+
+function AdminPanel({ onBack }: { onBack: () => void }) {
+  const [tab, setTab] = useState<AdminTab>("dashboard");
+  const { data: stats } = useDashboardStats();
+  const { data: allOrders = [] } = useAllOrders();
+  const { data: allItems = [] } = useAllInventoryItems();
+  const { data: customers = [] } = useCustomers();
+  const { data: bookings = [] } = useAllScoopBookings();
+  const updateStatus = useUpdateOrderStatus();
+  const updateDelivery = useUpdateDelivery();
+  const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+  const [courierInput, setCourierInput] = useState<Record<string, { courier: string; tracking: string; url: string }>>({});
+
+  const ADMIN_TABS: { id: AdminTab; icon: typeof LayoutDashboard; label: string }[] = [
+    { id: "dashboard", icon: LayoutDashboard, label: "Stats" },
+    { id: "orders", icon: Receipt, label: "Orders" },
+    { id: "inventory", icon: Package, label: "Stock" },
+    { id: "customers", icon: Users, label: "Customers" },
+    { id: "bookings", icon: Video, label: "Videos" },
+  ];
+
+  const ALL_STATUSES: OrderStatus[] = ["confirmed", "preparing", "packed", "shipped", "out_for_delivery", "delivered", "cancelled"];
+
+  return (
+    <Screen top={
+      <div className="flex items-center gap-2 border-b border-line bg-cream/95 px-4 py-3">
+        <button onClick={onBack} className="rounded-xl border border-line bg-white/70 px-3 py-1.5 text-[11px] font-bold text-ink-soft">← Back</button>
+        <span className="font-serif text-[16px] font-bold text-deep">Admin Panel</span>
+        <span className="ml-auto rounded-lg bg-rose/10 px-2 py-0.5 text-[10px] font-bold text-rose">Admin</span>
+      </div>
+    }>
+      {/* Tab bar */}
+      <div className="no-scrollbar flex gap-0 overflow-x-auto border-b border-line bg-white/60">
+        {ADMIN_TABS.map(({ id, icon: Icon, label }) => (
+          <button
+            key={id}
+            onClick={() => setTab(id)}
+            className={`flex flex-1 flex-col items-center gap-0.5 px-2 py-2.5 text-[9px] font-bold uppercase tracking-wide transition-colors ${tab === id ? "border-b-2 border-gold text-deep" : "border-b-2 border-transparent text-ink-mute"}`}
+          >
+            <Icon size={16} />
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <div className="p-4">
+        {/* ── Dashboard ── */}
+        {tab === "dashboard" && stats && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-2.5">
+              <StatCard label="Today's sales" value={`₹${stats.todaySales.toLocaleString("en-IN")}`} sub={`${stats.todayOrders} orders`} color="text-gold" />
+              <StatCard label="Monthly sales" value={`₹${stats.monthlySales.toLocaleString("en-IN")}`} />
+              <StatCard label="Today's profit" value={`₹${stats.todayProfit.toLocaleString("en-IN")}`} color="text-sage-DEFAULT" />
+              <StatCard label="Monthly profit" value={`₹${stats.monthlyProfit.toLocaleString("en-IN")}`} color="text-sage-DEFAULT" />
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <StatCard label="Pending" value={stats.pendingOrders} color="text-[#C06820]" />
+              <StatCard label="Processing" value={stats.processingOrders} />
+              <StatCard label="Delivered" value={stats.deliveredOrders} color="text-sage-DEFAULT" />
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <StatCard label="Total items" value={stats.totalItems} />
+              <StatCard label="Low stock" value={stats.lowStockItems} color="text-[#C06820]" />
+              <StatCard label="Out of stock" value={stats.outOfStockItems} color="text-rose" />
+            </div>
+            <div className="rounded-2xl border border-gold-light bg-gold-pale px-4 py-3">
+              <div className="flex items-center gap-2">
+                <TrendingUp size={16} className="text-gold" />
+                <span className="font-serif text-[13px] font-bold text-deep">Stock value</span>
+                <span className="ml-auto font-serif text-[16px] font-extrabold text-gold">₹{stats.stockValue.toLocaleString("en-IN")}</span>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <StatCard label="Video today" value={stats.todayVideoBookings} />
+              <StatCard label="Video upcoming" value={stats.upcomingVideoBookings} color="text-lav-DEFAULT" />
+            </div>
+          </div>
+        )}
+
+        {/* ── Orders ── */}
+        {tab === "orders" && (
+          <div>
+            <p className="mb-3 text-[11px] font-bold text-ink-mute">{allOrders.length} total orders</p>
+            <div className="space-y-2.5">
+              {allOrders.map((order) => {
+                const expanded = expandedOrder === order.id;
+                const ci = courierInput[order.id] ?? { courier: order.courier, tracking: order.trackingNumber, url: order.trackingUrl };
+                return (
+                  <div key={order.id} className="rounded-2xl border border-line bg-white/70">
+                    <button onClick={() => setExpandedOrder(expanded ? null : order.id)} className="flex w-full items-center gap-2.5 p-3.5 text-left">
+                      <span className="text-[22px]">{order.icon}</span>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[12px] font-bold text-deep">{order.customerName}</div>
+                        <div className="text-[10px] font-semibold text-ink-mute">{order.id} · ₹{order.total.toLocaleString("en-IN")}</div>
+                      </div>
+                      <div className="flex flex-col items-end gap-1">
+                        <span className={`rounded-lg px-2 py-0.5 text-[9px] font-bold ${STATUS_BADGE[order.status].cls}`}>{STATUS_BADGE[order.status].label}</span>
+                        {expanded ? <ChevronUp size={14} className="text-ink-mute" /> : <ChevronDown size={14} className="text-ink-mute" />}
+                      </div>
+                    </button>
+                    {expanded && (
+                      <div className="border-t border-line px-3.5 pb-3.5 pt-3 space-y-3">
+                        <div className="text-[11px] font-semibold text-ink-soft space-y-1">
+                          <div><span className="font-bold text-deep">Phone:</span> {order.customerPhone}</div>
+                          <div><span className="font-bold text-deep">Address:</span> {order.building}, {order.area} – {order.pin}</div>
+                          {order.note && <div><span className="font-bold text-deep">Note:</span> {order.note}</div>}
+                          <div><span className="font-bold text-deep">Profit:</span> ₹{order.netProfit}</div>
+                        </div>
+                        {/* Status update */}
+                        <div>
+                          <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wide text-ink-mute">Update status</label>
+                          <div className="flex flex-wrap gap-1.5">
+                            {ALL_STATUSES.map(s => (
+                              <button
+                                key={s}
+                                onClick={() => updateStatus.mutate({ orderId: order.id, status: s })}
+                                disabled={order.status === s}
+                                className={`rounded-lg border px-2.5 py-1 text-[10px] font-bold transition-colors ${order.status === s ? "border-deep bg-deep text-white" : "border-line bg-white/60 text-ink-soft"}`}
+                              >
+                                {s.replace(/_/g, " ")}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        {/* Delivery info */}
+                        <div className="space-y-2">
+                          <label className="block text-[10px] font-bold uppercase tracking-wide text-ink-mute">Delivery tracking</label>
+                          <input value={ci.courier} onChange={e => setCourierInput(p => ({ ...p, [order.id]: { ...ci, courier: e.target.value } }))} placeholder="Courier (e.g. Delhivery)" className="w-full rounded-xl border border-line bg-white/70 px-3 py-2 text-[12px] font-semibold text-deep outline-none focus:border-rose" />
+                          <input value={ci.tracking} onChange={e => setCourierInput(p => ({ ...p, [order.id]: { ...ci, tracking: e.target.value } }))} placeholder="Tracking number" className="w-full rounded-xl border border-line bg-white/70 px-3 py-2 text-[12px] font-semibold text-deep outline-none focus:border-rose" />
+                          <input value={ci.url} onChange={e => setCourierInput(p => ({ ...p, [order.id]: { ...ci, url: e.target.value } }))} placeholder="Tracking URL (optional)" className="w-full rounded-xl border border-line bg-white/70 px-3 py-2 text-[12px] font-semibold text-deep outline-none focus:border-rose" />
+                          <button
+                            onClick={() => updateDelivery.mutate({ orderId: order.id, courier: ci.courier, trackingNumber: ci.tracking, trackingUrl: ci.url })}
+                            disabled={!ci.courier || !ci.tracking}
+                            className="w-full rounded-xl bg-deep py-2.5 text-[12px] font-bold text-cream disabled:opacity-50"
+                          >
+                            <Truck size={13} className="mr-1.5 inline" /> Save & mark shipped
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ── Inventory ── */}
+        {tab === "inventory" && (
+          <div>
+            <p className="mb-3 text-[11px] font-bold text-ink-mute">{allItems.length} items · tap to see details</p>
+            <div className="space-y-2">
+              {allItems.map((item: IndividualItem) => {
+                const low = item.stock > 0 && item.stock <= item.minStock;
+                const out = item.stock === 0;
+                return (
+                  <div key={item.id} className={`flex items-center gap-3 rounded-2xl border p-3 ${out ? "border-rose/30 bg-rose/5" : low ? "border-[#E8C070]/60 bg-[#FFF8E8]" : "border-line bg-white/70"}`}>
+                    <span className="text-[22px]">{item.emoji}</span>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[12px] font-bold text-deep">{item.name}</div>
+                      <div className="text-[10px] font-semibold text-ink-mute">{item.sku} · {item.category}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className={`font-serif text-[16px] font-extrabold ${out ? "text-rose" : low ? "text-[#C06820]" : "text-deep"}`}>{item.stock}</div>
+                      <div className="text-[9px] font-bold text-ink-mute">₹{item.sellingPrice}</div>
+                    </div>
+                    {(low || out) && <AlertTriangle size={14} className={out ? "text-rose" : "text-[#C06820]"} />}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ── Customers ── */}
+        {tab === "customers" && (
+          <div>
+            <p className="mb-3 text-[11px] font-bold text-ink-mute">{customers.length} registered customers</p>
+            <div className="space-y-2.5">
+              {customers.map((c: Customer) => (
+                <div key={c.id} className="rounded-2xl border border-line bg-white/70 p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-full bg-blush font-serif text-[16px] font-bold text-mauve">{c.name[0]}</div>
+                    <div className="flex-1">
+                      <div className="font-serif text-[14px] font-bold text-deep">{c.name}</div>
+                      <div className="text-[11px] font-semibold text-ink-mute">{c.email}</div>
+                    </div>
+                  </div>
+                  <div className="mt-3 grid grid-cols-3 gap-2 border-t border-line pt-3">
+                    <div className="text-center">
+                      <div className="font-serif text-[16px] font-bold text-deep">{c.totalOrders}</div>
+                      <div className="text-[9px] font-bold text-ink-mute uppercase tracking-wide">Orders</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="font-serif text-[16px] font-bold text-gold">₹{c.totalSpend.toLocaleString("en-IN")}</div>
+                      <div className="text-[9px] font-bold text-ink-mute uppercase tracking-wide">Spent</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-[11px] font-bold text-deep">{c.phone}</div>
+                      <div className="text-[9px] font-bold text-ink-mute uppercase tracking-wide">Phone</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── Video bookings ── */}
+        {tab === "bookings" && (
+          <div>
+            <p className="mb-3 text-[11px] font-bold text-ink-mute">{bookings.length} video bookings</p>
+            <div className="space-y-2">
+              {bookings.map(b => (
+                <div key={b.id} className="rounded-2xl border border-line bg-white/70 p-3.5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-[12px] font-bold text-deep">{b.id} · {b.scoopTier} scoop</div>
+                      <div className="text-[10px] font-semibold text-ink-mute">{b.videoDate ?? "No date"} · {b.videoTime ?? "No time"}</div>
+                    </div>
+                    <span className={`rounded-lg px-2.5 py-1 text-[10px] font-bold ${b.status === "confirmed" ? "bg-[#D8F0D8] text-[#2A6030]" : "bg-[#FFE8E8] text-rose"}`}>
+                      {b.status}
+                    </span>
+                  </div>
+                </div>
+              ))}
+              {bookings.length === 0 && (
+                <div className="pt-10 text-center">
+                  <Video size={36} className="mx-auto mb-3 text-ink-mute" />
+                  <p className="font-serif text-[14px] text-ink-soft">No video bookings yet</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        <div className="h-8" />
+      </div>
+    </Screen>
+  );
+}
+
 // ── Main export ──────────────────────────────────────────────────────────────
 type View = "login" | "orders" | "account";
 
