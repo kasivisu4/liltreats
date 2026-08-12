@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { Address } from "../api/mockApi";
+import { _useInlineAuth } from "../components/BottomNav";
 
 export interface AuthUser {
   id: string;
