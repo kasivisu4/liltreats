@@ -505,13 +505,23 @@ function AdminPanel({ onBack }: { onBack: () => void }) {
               {bookings.map(b => (
                 <div key={b.id} className="rounded-2xl border border-line bg-white/70 p-3.5">
                   <div className="flex items-center justify-between">
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <div className="text-[12px] font-bold text-deep">{b.id} · {b.scoopTier} scoop</div>
                       <div className="text-[10px] font-semibold text-ink-mute">{b.videoDate ?? "No date"} · {b.videoTime ?? "No time"}</div>
                     </div>
-                    <span className={`rounded-lg px-2.5 py-1 text-[10px] font-bold ${b.status === "confirmed" ? "bg-[#D8F0D8] text-[#2A6030]" : "bg-[#FFE8E8] text-rose"}`}>
-                      {b.status}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className={`rounded-lg px-2.5 py-1 text-[10px] font-bold ${b.status === "confirmed" ? "bg-[#D8F0D8] text-[#2A6030]" : "bg-[#FFE8E8] text-rose"}`}>
+                        {b.status}
+                      </span>
+                      {b.videoSlotId && (
+                        <button
+                          onClick={() => blockSlot.mutate({ slotId: b.videoSlotId!, blocked: true })}
+                          className="rounded-lg border border-rose/30 bg-rose/10 px-2.5 py-1 text-[10px] font-bold text-rose"
+                        >
+                          Block slot
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -519,6 +529,7 @@ function AdminPanel({ onBack }: { onBack: () => void }) {
                 <div className="pt-10 text-center">
                   <Video size={36} className="mx-auto mb-3 text-ink-mute" />
                   <p className="font-serif text-[14px] text-ink-soft">No video bookings yet</p>
+                  <p className="mt-1 text-[12px] text-ink-mute">Bookings will appear here once customers add the video add-on.</p>
                 </div>
               )}
             </div>
