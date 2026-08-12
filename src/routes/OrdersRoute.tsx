@@ -236,7 +236,7 @@ function OrderCard({ order }: { order: Order }) {
 }
 
 // ── Admin dashboard ───────────────────────────────────────────────────────────
-type AdminTab = "dashboard" | "orders" | "inventory" | "customers" | "bookings";
+type AdminTab = "dashboard" | "orders" | "inventory" | "customers" | "bookings" | "scoops" | "slots" | "cms" | "notifications";
 
 function StatCard({ label, value, sub, color }: { label: string; value: string | number; sub?: string; color?: string }) {
   return (
