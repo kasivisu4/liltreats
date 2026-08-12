@@ -2,12 +2,11 @@ import { Link } from "@tanstack/react-router";
 import { Home, Sparkles, ShoppingBag, Receipt, MessageCircle, Instagram, UserCircle } from "lucide-react";
 
 const NAV = [
-  { to: "/",          label: "Home",                icon: Home,          exact: true  },
-  { to: "/inventory", label: "This week's scoops",  icon: Sparkles,      exact: false },
-  { to: "/shop",      label: "Shop items",          icon: ShoppingBag,   exact: false },
-  { to: "/orders",    label: "My orders",           icon: Receipt,       exact: false },
-  { to: "/orders",    label: "Account / Sign in",   icon: UserCircle,    exact: false },
-  { to: "/contact",   label: "Contact",             icon: MessageCircle, exact: false },
+  { to: "/",          label: "Home",               icon: Home,          exact: true  },
+  { to: "/inventory", label: "This week's scoops", icon: Sparkles,      exact: false },
+  { to: "/shop",      label: "Shop items",         icon: ShoppingBag,   exact: false },
+  { to: "/orders",    label: "Orders & Account",   icon: UserCircle,    exact: false },
+  { to: "/contact",   label: "Contact",            icon: MessageCircle, exact: false },
 ];
 
 const IG_URL = "https://www.instagram.com/_liltreats_/";
