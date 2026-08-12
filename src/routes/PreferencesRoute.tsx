@@ -54,6 +54,7 @@ function VideoSlotPicker() {
   const setVideoSlot = useCartStore((s) => s.setVideoSlot);
   const selectedSlotId = useCartStore((s) => s.selectedVideoSlotId);
   const selectedDate = useCartStore((s) => s.selectedVideoDate);
+  const timeSectionRef = useRef<HTMLDivElement>(null);
 
   const today = new Date();
   const minDate = new Date(today);
@@ -95,23 +96,35 @@ function VideoSlotPicker() {
     return totalBooked >= totalCap;
   }
 
+  function selectDate(dateStr: string) {
+    useCartStore.setState({
+      selectedVideoDate: dateStr,
+      selectedVideoSlotId: null,
+      selectedVideoTime: null,
+    });
+    // Auto-scroll to time picker after a short delay so it's rendered first
+    setTimeout(() => {
+      timeSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }, 80);
+  }
+
   const slotsForDate = selectedDate ? (byDate[selectedDate] ?? []) : [];
 
   return (
     <div className="rounded-2xl border border-gold-light bg-white/70 p-4">
+      {/* Step 1 — Date */}
       <div className="mb-3 flex items-center gap-2">
-        <Calendar size={16} className="text-gold" />
-        <span className="font-serif text-[14px] font-bold text-deep">
-          Select your video date
-        </span>
+        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-deep text-[10px] font-bold text-white">1</div>
+        <Calendar size={14} className="text-gold" />
+        <span className="font-serif text-[14px] font-bold text-deep">Pick a date</span>
       </div>
 
       <p className="mb-3 text-[11px] font-semibold leading-relaxed text-ink-soft">
-        Video dates open from{" "}
+        Available from{" "}
         <span className="font-bold text-deep">
           {minDate.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
         </span>{" "}
-        — maximum 2 bookings per day.
+        — max 2 bookings per day.
       </p>
 
       {/* Date picker row */}
@@ -149,14 +162,7 @@ function VideoSlotPicker() {
               <button
                 key={dateStr}
                 disabled={full}
-                onClick={() => {
-                  // Clear slot when changing date
-                  useCartStore.setState({
-                    selectedVideoDate: dateStr,
-                    selectedVideoSlotId: null,
-                    selectedVideoTime: null,
-                  });
-                }}
+                onClick={() => selectDate(dateStr)}
                 className={`flex flex-col items-center rounded-xl border py-2 text-center transition-all ${
                   selected
                     ? "border-rose bg-blush shadow-sm"
@@ -185,48 +191,63 @@ function VideoSlotPicker() {
         </div>
       </div>
 
-      {/* Slot picker */}
-      {selectedDate && (
-        <div>
-          <div className="mb-2 flex items-center gap-1.5">
-            <Clock size={13} className="text-gold" />
-            <span className="text-[12px] font-bold text-deep">Available time slots</span>
+      {/* Step 2 — Time */}
+      <div ref={timeSectionRef}>
+        {!selectedDate ? (
+          <div className="flex items-center gap-2 rounded-xl border border-dashed border-line bg-white/40 px-3 py-3">
+            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-line text-[10px] font-bold text-ink-mute">2</div>
+            <Clock size={13} className="text-ink-mute" />
+            <span className="text-[12px] font-semibold text-ink-mute">
+              Select a date above to see available times
+            </span>
           </div>
-          <div className="grid grid-cols-3 gap-2">
-            {slotsForDate.map((slot) => {
-              const available =
-                !slot.isBlocked && slot.bookedCount < slot.maxCapacity;
-              const isSelected = selectedSlotId === slot.id;
-              return (
-                <button
-                  key={slot.id}
-                  disabled={!available}
-                  onClick={() =>
-                    setVideoSlot(slot.id, slot.date, slot.time)
-                  }
-                  className={`rounded-xl border py-2.5 text-[11px] font-bold transition-all ${
-                    isSelected
-                      ? "border-rose bg-blush text-deep shadow-sm"
-                      : available
-                        ? "border-line bg-white/60 text-deep hover:border-gold"
-                        : "border-line bg-white/30 text-ink-mute opacity-40"
-                  }`}
-                >
-                  {slot.time}
-                  {!available && (
-                    <div className="text-[8px] font-semibold text-rose">Booked</div>
-                  )}
-                </button>
-              );
-            })}
+        ) : (
+          <div>
+            <div className="mb-2 flex items-center gap-2">
+              <div className="flex h-5 w-5 items-center justify-center rounded-full bg-deep text-[10px] font-bold text-white">2</div>
+              <Clock size={14} className="text-gold" />
+              <span className="text-[13px] font-bold text-deep">Pick a time</span>
+              <span className="ml-auto text-[11px] font-semibold text-ink-mute">
+                {fmtDate(selectedDate).date}
+              </span>
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              {slotsForDate.map((slot) => {
+                const available = !slot.isBlocked && slot.bookedCount < slot.maxCapacity;
+                const isSelected = selectedSlotId === slot.id;
+                return (
+                  <button
+                    key={slot.id}
+                    disabled={!available}
+                    onClick={() => setVideoSlot(slot.id, slot.date, slot.time)}
+                    className={`flex flex-col items-center rounded-xl border py-2.5 text-[11px] font-bold transition-all ${
+                      isSelected
+                        ? "border-rose bg-blush text-deep shadow-sm"
+                        : available
+                          ? "border-line bg-white/60 text-deep hover:border-gold"
+                          : "border-line bg-white/30 text-ink-mute opacity-40"
+                    }`}
+                  >
+                    {slot.time}
+                    {isSelected && (
+                      <span className="mt-0.5 text-[8px] font-bold text-rose">✓ Selected</span>
+                    )}
+                    {!available && (
+                      <span className="mt-0.5 text-[8px] font-semibold text-rose">Booked</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
+      {/* Confirmed banner */}
       {selectedSlotId && (
-        <div className="mt-3 rounded-xl border border-sage-DEFAULT/30 bg-[#EAF4EA] px-3 py-2 text-center">
+        <div className="mt-3 rounded-xl border border-sage-DEFAULT/30 bg-[#EAF4EA] px-3 py-2.5 text-center">
           <span className="text-[12px] font-bold text-sage-DEFAULT">
-            ✓ Video slot confirmed — {selectedDate} at{" "}
+            ✓ Confirmed — {fmtDate(selectedDate!).date} at{" "}
             {slotsForDate.find((s) => s.id === selectedSlotId)?.time}
           </span>
         </div>
