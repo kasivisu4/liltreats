@@ -2,7 +2,6 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 
-// Served from a GitHub Pages project subpath in production, root in dev.
 export default defineConfig(({ command }) => ({
   base: command === "build" ? "/liltreats/" : "/",
   plugins: [
@@ -20,24 +19,20 @@ export default defineConfig(({ command }) => ({
         orientation: "portrait",
         start_url: ".",
         icons: [
-          {
-            src: "favicon.svg",
-            sizes: "any",
-            type: "image/svg+xml",
-            purpose: "any",
-          },
-          {
-            src: "favicon.svg",
-            sizes: "any",
-            type: "image/svg+xml",
-            purpose: "maskable",
-          },
+          { src: "favicon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
+          { src: "favicon.svg", sizes: "any", type: "image/svg+xml", purpose: "maskable" },
         ],
       },
     }),
   ],
   server: {
     host: true,
-    port: 5173,
+    port: 3000,
+    proxy: {
+      "/api": {
+        target: "http://localhost:5001",
+        changeOrigin: true,
+      },
+    },
   },
 }));
